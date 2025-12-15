@@ -6,6 +6,7 @@
     <title>PETROLUBE - Enterprise Initiative Management</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
 <div id="app-root"></div>
@@ -2407,11 +2408,11 @@ function renderDashboard() {
             </div>
 
             <!-- Dashboard Sub-Navigation -->
-            <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; gap: 8px; overflow-x: auto;">
+            <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; flex-wrap: wrap; gap: 8px;">
                 ${dashboardPages.map(page => `
                     <button
                         class="btn ${state.dashboardPage === page.id ? 'btn-primary' : 'btn-secondary'}"
-                        style="white-space: nowrap; font-size: 13px; padding: 10px 16px;"
+                        style="white-space: nowrap; font-size: 12px; padding: 8px 12px;"
                         onclick="navigateToDashboardPage('${page.id}')">
                         ${page.icon} ${page.label}
                     </button>
@@ -2541,11 +2542,21 @@ function renderPortfolioDelivery() {
 
     return `
         <div>
+            <!-- Portfolio Impact vs Feasibility Matrix -->
             <div class="card mb-6">
-                <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">Portfolio Value Matrix</h2>
-                <div id="portfolioMatrix" style="position: relative; height: 500px; width: 100%;"></div>
+                <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 12px; color: var(--neutral-900);">Portfolio Impact vs Feasibility Matrix - Interactive D3.js</h2>
+                <p style="font-size: 13px; color: var(--neutral-600); margin-bottom: 20px;">71 Initiatives | Strategic Positioning Analysis</p>
+                <div id="portfolioImpactMatrix" style="position: relative; height: 550px; width: 100%; background: var(--neutral-50); border-radius: 8px;"></div>
             </div>
 
+            <!-- Portfolio Distribution Matrix -->
+            <div class="card mb-6">
+                <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 12px; color: var(--neutral-900);">Portfolio Distribution Matrix - Strategic Positioning</h2>
+                <p style="font-size: 13px; color: var(--neutral-600); margin-bottom: 20px;">71 INITIATIVES | CORE vs NON-CORE × INCREMENTAL vs DISRUPTIVE</p>
+                <div id="portfolioDistributionMatrix" style="position: relative; height: 550px; width: 100%;"></div>
+            </div>
+
+            <!-- Additional Charts -->
             <div class="grid grid-2 mb-6" style="gap: 24px;">
                 <div class="card">
                     <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">Delivery Timeline</h2>
@@ -4905,6 +4916,336 @@ IRR: ${project.criteriaValues?.irr_percentage || 'N/A'}%
 }
 
 // ============================================================================
+// D3.JS PORTFOLIO MATRICES
+// ============================================================================
+
+function classifyInitiative(init) {
+    // Classify as Core vs Non-Core based on tier and budget
+    const isCore = init.tier === '1a' || init.tier === '1b' || init.budget > 8000000;
+
+    // Classify as Incremental vs Disruptive based on name patterns and criticality
+    const disruptiveKeywords = ['transformation', 'innovation', 'digital', 'ai', 'analytics', 'platform', 'modernization'];
+    const isDisruptive = disruptiveKeywords.some(keyword => init.name.toLowerCase().includes(keyword)) || init.criticalPath;
+
+    return {
+        core: isCore ? 'core' : 'non-core',
+        innovation: isDisruptive ? 'disruptive' : 'incremental'
+    };
+}
+
+function renderPortfolioImpactMatrix() {
+    const container = document.getElementById('portfolioImpactMatrix');
+    if (!container) return;
+
+    // Clear previous content
+    container.innerHTML = '';
+
+    const initiatives = getInitiatives().map(init => ({
+        ...init,
+        impact: Math.min(100, (init.budget / 250000) + (init.criticalPath ? 20 : 0)),
+        feasibility: 100 - (init.dependencies?.length || 0) * 10 - (init.tier === '1a' ? 10 : 0)
+    }));
+
+    const width = container.clientWidth;
+    const height = 550;
+    const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+
+    const svg = d3.select(container)
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height);
+
+    const g = svg.append('g')
+        .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    // Scales
+    const xScale = d3.scaleLinear()
+        .domain([0, 100])
+        .range([0, innerWidth]);
+
+    const yScale = d3.scaleLinear()
+        .domain([0, 100])
+        .range([innerHeight, 0]);
+
+    const sizeScale = d3.scaleSqrt()
+        .domain([0, d3.max(initiatives, d => d.budget)])
+        .range([4, 20]);
+
+    const colorScale = d3.scaleOrdinal()
+        .domain(['1a', '1b', '1c', '1d', 'contingent'])
+        .range(['#0d5530', '#16a34a', '#2563eb', '#d97706', '#6b7280']);
+
+    // Quadrant lines
+    g.append('line')
+        .attr('x1', innerWidth / 2)
+        .attr('x2', innerWidth / 2)
+        .attr('y1', 0)
+        .attr('y2', innerHeight)
+        .attr('stroke', '#d1d5db')
+        .attr('stroke-width', 2)
+        .attr('stroke-dasharray', '5,5');
+
+    g.append('line')
+        .attr('x1', 0)
+        .attr('x2', innerWidth)
+        .attr('y1', innerHeight / 2)
+        .attr('y2', innerHeight / 2)
+        .attr('stroke', '#d1d5db')
+        .attr('stroke-width', 2)
+        .attr('stroke-dasharray', '5,5');
+
+    // Quadrant labels
+    const quadrantLabels = [
+        { x: innerWidth * 0.75, y: innerHeight * 0.25, text: 'Quick Wins', color: '#059669' },
+        { x: innerWidth * 0.25, y: innerHeight * 0.25, text: 'Strategic Investments', color: '#2563eb' },
+        { x: innerWidth * 0.25, y: innerHeight * 0.75, text: 'Low Priority', color: '#6b7280' },
+        { x: innerWidth * 0.75, y: innerHeight * 0.75, text: 'Fill-ins', color: '#d97706' }
+    ];
+
+    quadrantLabels.forEach(label => {
+        g.append('text')
+            .attr('x', label.x)
+            .attr('y', label.y)
+            .attr('text-anchor', 'middle')
+            .attr('fill', label.color)
+            .attr('font-size', '14px')
+            .attr('font-weight', '700')
+            .attr('opacity', 0.5)
+            .text(label.text);
+    });
+
+    // Axes
+    const xAxis = d3.axisBottom(xScale).ticks(5);
+    const yAxis = d3.axisLeft(yScale).ticks(5);
+
+    g.append('g')
+        .attr('transform', `translate(0,${innerHeight})`)
+        .call(xAxis)
+        .style('font-size', '11px');
+
+    g.append('g')
+        .call(yAxis)
+        .style('font-size', '11px');
+
+    // Axis labels
+    g.append('text')
+        .attr('x', innerWidth / 2)
+        .attr('y', innerHeight + 45)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '12px')
+        .attr('font-weight', '700')
+        .attr('fill', '#374151')
+        .text('Feasibility →');
+
+    g.append('text')
+        .attr('transform', 'rotate(-90)')
+        .attr('x', -innerHeight / 2)
+        .attr('y', -45)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '12px')
+        .attr('font-weight', '700')
+        .attr('fill', '#374151')
+        .text('← Impact');
+
+    // Tooltip
+    const tooltip = d3.select('body')
+        .append('div')
+        .attr('class', 'matrix-tooltip')
+        .style('position', 'absolute')
+        .style('background', 'rgba(0,0,0,0.9)')
+        .style('color', 'white')
+        .style('padding', '12px')
+        .style('border-radius', '6px')
+        .style('font-size', '12px')
+        .style('pointer-events', 'none')
+        .style('opacity', 0)
+        .style('z-index', '10000');
+
+    // Bubbles
+    const bubbles = g.selectAll('circle')
+        .data(initiatives)
+        .enter()
+        .append('circle')
+        .attr('cx', d => xScale(d.feasibility))
+        .attr('cy', d => yScale(d.impact))
+        .attr('r', d => sizeScale(d.budget))
+        .attr('fill', d => colorScale(d.tier))
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 2)
+        .attr('opacity', 0.8)
+        .style('cursor', 'pointer')
+        .on('mouseover', function(event, d) {
+            d3.select(this)
+                .transition()
+                .duration(200)
+                .attr('opacity', 1)
+                .attr('stroke-width', 3);
+
+            tooltip.transition().duration(200).style('opacity', 1);
+            tooltip.html(`
+                <strong>${d.id}</strong><br/>
+                ${d.name}<br/>
+                <strong>Impact:</strong> ${d.impact.toFixed(0)}<br/>
+                <strong>Feasibility:</strong> ${d.feasibility.toFixed(0)}<br/>
+                <strong>Budget:</strong> ${(d.budget / 1000000).toFixed(1)}M SAR<br/>
+                <strong>Tier:</strong> ${d.tier.toUpperCase()}
+            `)
+                .style('left', (event.pageX + 10) + 'px')
+                .style('top', (event.pageY - 28) + 'px');
+        })
+        .on('mouseout', function(event, d) {
+            d3.select(this)
+                .transition()
+                .duration(200)
+                .attr('opacity', 0.8)
+                .attr('stroke-width', 2);
+
+            tooltip.transition().duration(500).style('opacity', 0);
+        });
+
+    // Legend
+    const legend = g.append('g')
+        .attr('transform', `translate(${innerWidth - 150}, 10)`);
+
+    const tiers = ['1a', '1b', '1c', '1d', 'contingent'];
+    const tierLabels = ['Tier 1A', 'Tier 1B', 'Tier 1C', 'Tier 1D', 'Contingent'];
+
+    tiers.forEach((tier, i) => {
+        const legendRow = legend.append('g')
+            .attr('transform', `translate(0, ${i * 20})`);
+
+        legendRow.append('circle')
+            .attr('r', 5)
+            .attr('fill', colorScale(tier));
+
+        legendRow.append('text')
+            .attr('x', 12)
+            .attr('y', 4)
+            .attr('font-size', '11px')
+            .attr('fill', '#374151')
+            .text(tierLabels[i]);
+    });
+}
+
+function renderPortfolioDistributionMatrix() {
+    const container = document.getElementById('portfolioDistributionMatrix');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    const initiatives = getInitiatives().map(init => ({
+        ...init,
+        ...classifyInitiative(init)
+    }));
+
+    // Count initiatives in each quadrant
+    const counts = {
+        'core-incremental': initiatives.filter(i => i.core === 'core' && i.innovation === 'incremental').length,
+        'core-disruptive': initiatives.filter(i => i.core === 'core' && i.innovation === 'disruptive').length,
+        'non-core-incremental': initiatives.filter(i => i.core === 'non-core' && i.innovation === 'incremental').length,
+        'non-core-disruptive': initiatives.filter(i => i.core === 'non-core' && i.innovation === 'disruptive').length
+    };
+
+    const width = container.clientWidth;
+    const height = 550;
+    const margin = { top: 60, right: 40, bottom: 60, left: 80 };
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+
+    const svg = d3.select(container)
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height);
+
+    const g = svg.append('g')
+        .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    // Draw quadrants
+    const quadrants = [
+        { x: innerWidth / 2, y: 0, width: innerWidth / 2, height: innerHeight / 2, label: 'Core-Disruptive', count: counts['core-disruptive'], color: '#0d5530', textColor: '#fff' },
+        { x: 0, y: 0, width: innerWidth / 2, height: innerHeight / 2, label: 'NonCore-Disruptive', count: counts['non-core-disruptive'], color: '#2563eb', textColor: '#fff' },
+        { x: innerWidth / 2, y: innerHeight / 2, width: innerWidth / 2, height: innerHeight / 2, label: 'Core-Incremental', count: counts['core-incremental'], color: '#d97706', textColor: '#fff' },
+        { x: 0, y: innerHeight / 2, width: innerWidth / 2, height: innerHeight / 2, label: 'NonCore-Incremental', count: counts['non-core-incremental'], color: '#6b7280', textColor: '#fff' }
+    ];
+
+    quadrants.forEach(quad => {
+        g.append('rect')
+            .attr('x', quad.x)
+            .attr('y', quad.y)
+            .attr('width', quad.width)
+            .attr('height', quad.height)
+            .attr('fill', quad.color)
+            .attr('opacity', 0.15)
+            .attr('stroke', quad.color)
+            .attr('stroke-width', 2);
+
+        g.append('text')
+            .attr('x', quad.x + quad.width / 2)
+            .attr('y', quad.y + quad.height / 2 - 20)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '16px')
+            .attr('font-weight', '800')
+            .attr('fill', quad.color)
+            .text(quad.label);
+
+        g.append('text')
+            .attr('x', quad.x + quad.width / 2)
+            .attr('y', quad.y + quad.height / 2 + 10)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '32px')
+            .attr('font-weight', '900')
+            .attr('fill', quad.color)
+            .text(quad.count);
+
+        g.append('text')
+            .attr('x', quad.x + quad.width / 2)
+            .attr('y', quad.y + quad.height / 2 + 30)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '13px')
+            .attr('font-weight', '600')
+            .attr('fill', quad.color)
+            .text('initiatives');
+    });
+
+    // Axis labels
+    g.append('text')
+        .attr('x', innerWidth / 2)
+        .attr('y', -30)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '14px')
+        .attr('font-weight', '700')
+        .attr('fill', '#374151')
+        .text('DISRUPTIVE');
+
+    g.append('text')
+        .attr('x', innerWidth / 2)
+        .attr('y', innerHeight + 40)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '14px')
+        .attr('font-weight', '700')
+        .attr('fill', '#374151')
+        .text('INCREMENTAL');
+
+    g.append('text')
+        .attr('transform', `translate(-50, ${innerHeight / 2}) rotate(-90)`)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '14px')
+        .attr('font-weight', '700')
+        .attr('fill', '#374151')
+        .text('NON-CORE');
+
+    g.append('text')
+        .attr('transform', `translate(${innerWidth + 30}, ${innerHeight / 2}) rotate(90)`)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '14px')
+        .attr('font-weight', '700')
+        .attr('fill', '#374151')
+        .text('CORE');
+}
+
+// ============================================================================
 // CHART.JS INITIALIZATION
 // ============================================================================
 
@@ -5001,6 +5342,10 @@ function initializeDashboardCharts() {
 
     // Portfolio & Delivery Charts
     if (state.dashboardPage === 'portfolio') {
+        // Render D3.js Matrices
+        renderPortfolioImpactMatrix();
+        renderPortfolioDistributionMatrix();
+
         // Delivery Timeline Chart
         const deliveryCtx = document.getElementById('deliveryChart');
         if (deliveryCtx) {
