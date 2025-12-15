@@ -4920,17 +4920,28 @@ IRR: ${project.criteriaValues?.irr_percentage || 'N/A'}%
 // ============================================================================
 
 function classifyInitiative(init) {
-    // Classify as Core vs Non-Core based on tier and budget
-    const isCore = init.tier === '1a' || init.tier === '1b' || init.budget > 8000000;
+    // Use existing category field from initiative data (e.g., 'Core-Incremental', 'Non-Core-Disruptive')
+    if (init.category) {
+        const parts = init.category.split('-');
 
-    // Classify as Incremental vs Disruptive based on name patterns and criticality
-    const disruptiveKeywords = ['transformation', 'innovation', 'digital', 'ai', 'analytics', 'platform', 'modernization'];
-    const isDisruptive = disruptiveKeywords.some(keyword => init.name.toLowerCase().includes(keyword)) || init.criticalPath;
+        // Handle 'Non-Core' as a special case since it contains a hyphen
+        let coreValue, innovationValue;
+        if (parts[0] === 'Non' && parts[1] === 'Core') {
+            coreValue = 'non-core';
+            innovationValue = parts[2]?.toLowerCase() || 'incremental';
+        } else {
+            coreValue = parts[0].toLowerCase();
+            innovationValue = parts[1]?.toLowerCase() || 'incremental';
+        }
 
-    return {
-        core: isCore ? 'core' : 'non-core',
-        innovation: isDisruptive ? 'disruptive' : 'incremental'
-    };
+        return {
+            core: coreValue,
+            innovation: innovationValue
+        };
+    }
+
+    // Fallback if category field is missing
+    return { core: 'core', innovation: 'incremental' };
 }
 
 function renderPortfolioImpactMatrix() {
