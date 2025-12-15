@@ -1334,6 +1334,12 @@ class DataStore {
         const stored = localStorage.getItem('petrolubeEnterpriseData');
         if (stored) {
             this.data = JSON.parse(stored);
+
+            // Migration: Add adminSettings if it doesn't exist
+            if (!this.data.adminSettings) {
+                this.data.adminSettings = JSON.parse(JSON.stringify(INITIAL_DATA.adminSettings));
+                this.saveData();
+            }
         } else {
             this.data = JSON.parse(JSON.stringify(INITIAL_DATA));
             // Score all sample projects
