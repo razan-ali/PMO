@@ -1736,7 +1736,7 @@ function renderHeader() {
                 </div>
                 <nav>
                     ${['dashboard', 'projects', 'templates', 'scenarios', 'insights', 'admin'].map(page => `
-                        <a class="nav-link ${state.currentPage === page ? 'active' : ''}" onclick="navigateTo('${page}')">
+                        <a href="#" class="nav-link ${state.currentPage === page ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('${page}');">
                             ${page.charAt(0).toUpperCase() + page.slice(1)}
                         </a>
                     `).join('')}
