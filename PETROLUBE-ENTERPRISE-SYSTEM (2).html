@@ -2169,15 +2169,15 @@ function renderFieldEditorModal() {
 
     return `
         <div class="modal" style="display: flex;">
-            <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-content" style="max-width: 800px;">
                 <div class="modal-header">
                     <h2>${isEditing ? 'Edit Field' : 'Add Field'}</h2>
                     <button class="modal-close" onclick="closeFieldEditor()">×</button>
                 </div>
                 <div class="modal-body">
-                    <div style="margin-bottom: 24px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--neutral-700);">Field Type</label>
-                        <select class="input" onchange="updateFieldEditorProperty('type', this.value)">
+                    <div class="form-group">
+                        <label class="form-label">Field Type</label>
+                        <select class="form-control" onchange="updateFieldEditorProperty('type', this.value)">
                             <option value="text" ${field.type === 'text' ? 'selected' : ''}>Text</option>
                             <option value="number" ${field.type === 'number' ? 'selected' : ''}>Number</option>
                             <option value="currency" ${field.type === 'currency' ? 'selected' : ''}>Currency (SAR)</option>
@@ -2187,51 +2187,51 @@ function renderFieldEditorModal() {
                         </select>
                     </div>
 
-                    <div style="margin-bottom: 24px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--neutral-700);">Label (Display Name)</label>
-                        <input type="text" class="input" value="${field.label}"
+                    <div class="form-group">
+                        <label class="form-label">Label (Display Name)</label>
+                        <input type="text" class="form-control" value="${field.label}"
                                oninput="updateFieldEditorProperty('label', this.value)"
                                placeholder="e.g., 7. Strategic Priority">
                     </div>
 
-                    <div style="margin-bottom: 24px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--neutral-700);">Key (Internal Identifier - no spaces)</label>
-                        <input type="text" class="input" value="${field.key}"
+                    <div class="form-group">
+                        <label class="form-label">Key (Internal Identifier - no spaces)</label>
+                        <input type="text" class="form-control" value="${field.key}"
                                oninput="updateFieldEditorProperty('key', this.value.toLowerCase().replace(/\\s+/g, '_'))"
                                placeholder="e.g., strategic_priority">
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 12px; background: var(--neutral-50); border-radius: 8px; border: 1px solid var(--neutral-200);">
                             <input type="checkbox" ${field.required ? 'checked' : ''}
                                    onchange="updateFieldEditorProperty('required', this.checked)">
-                            <span style="font-weight: 700; color: var(--neutral-700);">Required field</span>
+                            <span style="font-weight: 600; color: var(--neutral-800); font-size: 14px;">Required field</span>
                         </label>
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 12px; background: var(--neutral-50); border-radius: 8px; border: 1px solid var(--neutral-200);">
                             <input type="checkbox" ${field.is_scoring ? 'checked' : ''}
                                    onchange="updateFieldEditorProperty('is_scoring', this.checked)">
-                            <span style="font-weight: 700; color: var(--neutral-700);">Use for scoring</span>
+                            <span style="font-weight: 600; color: var(--neutral-800); font-size: 14px;">Use for scoring</span>
                         </label>
                     </div>
 
                     ${field.is_scoring ? `
-                        <div style="background: var(--petro-green-50); border: 2px solid var(--petro-green-200); border-radius: 10px; padding: 20px; margin-bottom: 24px;">
-                            <h3 style="font-weight: 700; color: var(--petro-green-900); margin-bottom: 16px;">Scoring Configuration</h3>
-                            <div style="margin-bottom: 16px;">
-                                <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--neutral-700);">Weight (%)</label>
-                                <input type="number" class="input" value="${field.weight}"
+                        <div style="background: var(--petro-green-50); border: 2px solid var(--petro-green-200); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                            <h3 style="font-weight: 700; color: var(--petro-green-800); margin-bottom: 16px; font-size: 16px;">Scoring Configuration</h3>
+                            <div class="form-group">
+                                <label class="form-label">Weight (%)</label>
+                                <input type="number" class="form-control" value="${field.weight}"
                                        oninput="updateFieldEditorProperty('weight', Number(this.value))"
                                        placeholder="e.g., 25" min="0" max="100">
                             </div>
 
                             ${(field.type === 'number' || field.type === 'currency') ? `
-                                <div style="margin-bottom: 16px;">
-                                    <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--neutral-700);">Threshold (Optional - for pass/fail scoring)</label>
-                                    <input type="number" class="input" value="${field.threshold || ''}"
+                                <div class="form-group">
+                                    <label class="form-label">Threshold (Optional - for pass/fail scoring)</label>
+                                    <input type="number" class="form-control" value="${field.threshold || ''}"
                                            oninput="updateFieldEditorProperty('threshold', this.value ? Number(this.value) : null)"
                                            placeholder="e.g., 15 (for IRR >= 15%)">
                                 </div>
-                                <div style="font-size: 12px; color: var(--petro-green-700); padding: 12px; background: white; border-radius: 6px;">
+                                <div class="alert alert-info" style="margin-bottom: 0;">
                                     ${field.threshold !== null && field.threshold !== undefined && field.threshold !== '' ? `
                                         <strong>Threshold Mode:</strong> Value ≥ ${field.threshold} = 100 points, below = 0 points
                                     ` : `
@@ -2243,51 +2243,49 @@ function renderFieldEditorModal() {
                     ` : ''}
 
                     ${(field.type === 'number' || field.type === 'currency') ? `
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-                            <div>
-                                <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--neutral-700);">Min Value</label>
-                                <input type="number" class="input" value="${field.config.min || 0}"
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                            <div class="form-group">
+                                <label class="form-label">Min Value</label>
+                                <input type="number" class="form-control" value="${field.config.min || 0}"
                                        oninput="updateFieldEditorProperty('config.min', Number(this.value))">
                             </div>
-                            <div>
-                                <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--neutral-700);">Max Value</label>
-                                <input type="number" class="input" value="${field.config.max || 100}"
+                            <div class="form-group">
+                                <label class="form-label">Max Value</label>
+                                <input type="number" class="form-control" value="${field.config.max || 100}"
                                        oninput="updateFieldEditorProperty('config.max', Number(this.value))">
                             </div>
                         </div>
                     ` : ''}
 
                     ${field.type === 'dropdown' ? `
-                        <div style="margin-bottom: 24px;">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--neutral-700);">
+                        <div class="form-group">
+                            <label class="form-label">
                                 Dropdown Options ${field.is_scoring ? '(with point values)' : ''}
                             </label>
-                            <div style="max-height: 300px; overflow-y: auto; margin-bottom: 12px; padding: 12px; background: var(--neutral-50); border-radius: 8px;">
+                            <div style="max-height: 300px; overflow-y: auto; margin-bottom: 12px; padding: 12px; background: var(--neutral-50); border-radius: 8px; border: 1px solid var(--neutral-200);">
                                 ${(field.config.options || []).map((opt, idx) => `
                                     <div style="display: grid; grid-template-columns: ${field.is_scoring ? '2fr 3fr 1fr 40px' : '2fr 3fr 40px'}; gap: 8px; margin-bottom: 8px;">
-                                        <input type="text" class="input" placeholder="value" value="${opt.value}"
-                                               oninput="updateDropdownOption(${idx}, 'value', this.value)">
-                                        <input type="text" class="input" placeholder="Label" value="${opt.label}"
-                                               oninput="updateDropdownOption(${idx}, 'label', this.value)">
+                                        <input type="text" class="form-control" placeholder="value" value="${opt.value}"
+                                               oninput="updateDropdownOption(${idx}, 'value', this.value)" style="font-size: 13px; padding: 8px 10px;">
+                                        <input type="text" class="form-control" placeholder="Label" value="${opt.label}"
+                                               oninput="updateDropdownOption(${idx}, 'label', this.value)" style="font-size: 13px; padding: 8px 10px;">
                                         ${field.is_scoring ? `
-                                            <input type="number" class="input" placeholder="Points" value="${opt.points}"
-                                                   oninput="updateDropdownOption(${idx}, 'points', Number(this.value))">
+                                            <input type="number" class="form-control" placeholder="Points" value="${opt.points}"
+                                                   oninput="updateDropdownOption(${idx}, 'points', Number(this.value))" style="font-size: 13px; padding: 8px 10px;">
                                         ` : ''}
-                                        <button class="btn btn-danger btn-sm" onclick="removeDropdownOption(${idx})"
-                                                style="height: 40px;">×</button>
+                                        <button class="btn btn-secondary btn-sm" onclick="removeDropdownOption(${idx})" style="padding: 8px;">×</button>
                                     </div>
                                 `).join('')}
                             </div>
                             <button class="btn btn-secondary btn-sm" onclick="addDropdownOption()">+ Add Option</button>
                         </div>
                     ` : ''}
-
-                    <div style="display: flex; gap: 12px; margin-top: 24px;">
-                        <button class="btn btn-secondary" onclick="closeFieldEditor()">Cancel</button>
-                        <button class="btn btn-primary" onclick="saveField()" style="flex: 1;">
-                            ${isEditing ? 'Update Field' : 'Add Field'}
-                        </button>
-                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeFieldEditor()">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveField()">
+                        ${isEditing ? 'Update Field' : 'Add Field'}
+                    </button>
                 </div>
             </div>
         </div>
@@ -2308,86 +2306,90 @@ function renderTemplateBuilder() {
                 <p style="color: var(--neutral-600); font-size: 15px;">Configure initiative criteria and scoring weights</p>
             </div>
 
-            <div class="card" style="margin-bottom: 24px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--neutral-700);">Template Name</label>
-                <input type="text" class="input" value="${template.name}"
-                       oninput="state.editingTemplate.name = this.value; render();"
-                       placeholder="e.g., Petrolube Initiative Dossier - 35 Criteria V15">
+            <div class="card">
+                <div class="form-group">
+                    <label class="form-label">Template Name</label>
+                    <input type="text" class="form-control" value="${template.name}"
+                           oninput="state.editingTemplate.name = this.value; render();"
+                           placeholder="e.g., Petrolube Initiative Dossier - 35 Criteria V15">
+                </div>
             </div>
 
-            <div class="card" style="margin-bottom: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--neutral-200);">
                     <div>
-                        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 4px;">Fields Configuration</h2>
+                        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 4px; color: var(--neutral-900);">Fields Configuration</h2>
                         <p style="font-size: 14px; color: var(--neutral-600);">
                             ${template.fields.length} total fields • ${scoringFields.length} scoring fields
                         </p>
                     </div>
-                    <div style="text-align: right;">
-                        <div style="font-size: 12px; color: var(--neutral-600); margin-bottom: 4px;">Scoring Weight Total:</div>
-                        <div style="font-size: 32px; font-weight: 800; color: ${totalWeight === 100 ? 'var(--petro-green-700)' : 'var(--red-600)'};">
+                    <div class="stat-card" style="min-width: 140px; text-align: center; margin: 0;">
+                        <div class="stat-card-header" style="margin-bottom: 8px;">Weight Total</div>
+                        <div style="font-size: 36px; font-weight: 800; line-height: 1; color: ${totalWeight === 100 ? 'var(--petro-green-700)' : 'var(--red-600)'};">
                             ${totalWeight}%
                         </div>
-                        ${totalWeight !== 100 ? '<div style="font-size: 11px; color: var(--red-600); margin-top: 4px;">Must equal 100%</div>' : ''}
+                        ${totalWeight !== 100 ? '<div style="font-size: 11px; color: var(--red-600); margin-top: 8px; font-weight: 600;">Must equal 100%</div>' : '<div style="font-size: 11px; color: var(--petro-green-700); margin-top: 8px; font-weight: 600;">✓ Valid</div>'}
                     </div>
                 </div>
 
                 ${template.fields.length === 0 ? `
-                    <div style="text-align: center; padding: 60px 20px; color: var(--neutral-500);">
-                        No fields added yet. Click "Add Field" to get started.
+                    <div style="text-align: center; padding: 80px 40px; background: var(--neutral-50); border-radius: 10px; border: 2px dashed var(--neutral-300);">
+                        <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;">📝</div>
+                        <p style="color: var(--neutral-500); font-size: 15px; margin-bottom: 20px;">No fields added yet. Click "Add Field" to get started.</p>
+                        <button class="btn btn-primary" onclick="openFieldEditor()">+ Add First Field</button>
                     </div>
                 ` : `
-                    <div style="max-height: 500px; overflow-y: auto; margin-bottom: 20px;">
+                    <div style="max-height: 500px; overflow-y: auto; margin-bottom: 20px; padding-right: 4px;">
                         ${template.fields.map((field, index) => `
-                            <div style="border: 1px solid var(--neutral-200); border-radius: 8px; padding: 16px; margin-bottom: 12px; background: white;">
-                                <div style="display: flex; gap: 16px;">
-                                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <div class="card" style="margin-bottom: 12px; padding: 16px; border: 1px solid var(--neutral-200); box-shadow: var(--shadow-sm);">
+                                <div style="display: flex; gap: 16px; align-items: start;">
+                                    <div style="display: flex; flex-direction: column; gap: 6px;">
                                         <button class="btn btn-secondary btn-sm" onclick="moveField(${index}, 'up')"
                                                 ${index === 0 ? 'disabled' : ''}
-                                                style="padding: 4px 8px; font-size: 12px;">▲</button>
+                                                style="padding: 6px 10px; font-size: 11px; min-width: 32px;">▲</button>
                                         <button class="btn btn-secondary btn-sm" onclick="moveField(${index}, 'down')"
                                                 ${index === template.fields.length - 1 ? 'disabled' : ''}
-                                                style="padding: 4px 8px; font-size: 12px;">▼</button>
+                                                style="padding: 6px 10px; font-size: 11px; min-width: 32px;">▼</button>
                                     </div>
 
                                     <div style="flex: 1;">
-                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                            <span style="font-size: 12px; font-family: monospace; color: var(--neutral-400);">#${index + 1}</span>
-                                            <span style="font-size: 16px; font-weight: 800; color: var(--neutral-900);">${field.label}</span>
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+                                            <span style="font-size: 11px; font-family: monospace; color: var(--neutral-400); background: var(--neutral-100); padding: 2px 6px; border-radius: 4px;">#${index + 1}</span>
+                                            <span style="font-size: 15px; font-weight: 700; color: var(--neutral-900);">${field.label}</span>
                                             ${field.required ? '<span class="badge badge-red">Required</span>' : ''}
                                             ${field.is_scoring ? `<span class="badge badge-orange">Scoring: ${field.weight}%</span>` : ''}
                                         </div>
-                                        <div style="font-size: 13px; color: var(--neutral-600);">
-                                            <span style="font-weight: 600;">Type:</span> <code style="background: var(--neutral-100); padding: 2px 6px; border-radius: 4px;">${field.type}</code>
-                                            <span style="margin-left: 12px; font-weight: 600;">Key:</span> <code style="background: var(--neutral-100); padding: 2px 6px; border-radius: 4px;">${field.key}</code>
+                                        <div style="font-size: 13px; color: var(--neutral-600); line-height: 1.6;">
+                                            <span style="font-weight: 600;">Type:</span> <code style="background: var(--neutral-100); padding: 2px 6px; border-radius: 4px; font-size: 12px;">${field.type}</code>
+                                            <span style="margin-left: 12px; font-weight: 600;">Key:</span> <code style="background: var(--neutral-100); padding: 2px 6px; border-radius: 4px; font-size: 12px;">${field.key}</code>
                                             ${field.threshold !== null && field.threshold !== undefined && field.threshold !== '' ?
                                                 `<span style="margin-left: 12px; font-weight: 600;">Threshold: <strong>${field.threshold}</strong></span>` : ''}
                                         </div>
                                         ${field.type === 'dropdown' && field.config.options ? `
-                                            <div style="margin-top: 8px; font-size: 11px; color: var(--neutral-500);">
-                                                Options: ${field.config.options.map(o => o.label).join(', ')}
+                                            <div style="margin-top: 10px; padding: 8px 12px; background: var(--neutral-50); border-radius: 6px; border: 1px solid var(--neutral-200);">
+                                                <div style="font-size: 11px; color: var(--neutral-600); font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.03em;">Options</div>
+                                                <div style="font-size: 12px; color: var(--neutral-700);">${field.config.options.map(o => o.label).slice(0, 5).join(', ')}${field.config.options.length > 5 ? ` +${field.config.options.length - 5} more` : ''}</div>
                                             </div>
                                         ` : ''}
                                     </div>
 
                                     <div style="display: flex; gap: 8px;">
-                                        <button class="btn btn-secondary btn-sm" onclick="openFieldEditor(${index})">Edit</button>
-                                        <button class="btn btn-danger btn-sm" onclick="removeField(${index})">Remove</button>
+                                        <button class="btn btn-primary btn-sm" onclick="openFieldEditor(${index})">Edit</button>
+                                        <button class="btn btn-secondary btn-sm" onclick="removeField(${index})" style="color: var(--red-600);">Remove</button>
                                     </div>
                                 </div>
                             </div>
                         `).join('')}
                     </div>
+                    <button class="btn btn-secondary btn-block" onclick="openFieldEditor()">+ Add Field</button>
                 `}
-
-                <button class="btn btn-secondary" onclick="openFieldEditor()" style="width: 100%;">+ Add Field</button>
             </div>
 
-            <div style="display: flex; gap: 12px;">
-                <button class="btn btn-secondary" onclick="cancelTemplateBuilder()">Cancel</button>
-                <button class="btn btn-primary" onclick="saveTemplateFromBuilder()" style="flex: 1;"
+            <div style="display: flex; gap: 12px; position: sticky; bottom: 20px; background: var(--neutral-50); padding: 16px 0; margin-top: 24px;">
+                <button class="btn btn-secondary btn-lg" onclick="cancelTemplateBuilder()">Cancel</button>
+                <button class="btn btn-primary btn-lg btn-block" onclick="saveTemplateFromBuilder()"
                         ${totalWeight !== 100 ? 'disabled' : ''}>
-                    ${totalWeight === 100 ? 'Publish Template' : `Fix Weight Total (${totalWeight}% ≠ 100%)`}
+                    ${totalWeight === 100 ? '✓ Publish Template' : `⚠ Fix Weight Total (${totalWeight}% ≠ 100%)`}
                 </button>
             </div>
         </div>
