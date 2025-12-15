@@ -5710,6 +5710,74 @@ function renderDependencyNetwork() {
         d.fy = null;
     }
 }
+
+// ============================================================================
+// DASHBOARD CHARTS
+// ============================================================================
+
+function initializeDashboardCharts() {
+    const initiatives = getInitiatives();
+
+    // Destroy existing charts before creating new ones
+    Object.keys(window.chartInstances || {}).forEach(key => {
+        if (window.chartInstances[key]) {
+            window.chartInstances[key].destroy();
+            delete window.chartInstances[key];
+        }
+    });
+
+    if (!window.chartInstances) {
+        window.chartInstances = {};
+    }
+
+    // Executive Summary Charts
+    if (state.dashboardPage === 'executive') {
+        // Initiative Status Chart
+        const statusCtx = document.getElementById('statusChart');
+        if (statusCtx) {
+            const statusCounts = {
+                'completed': initiatives.filter(i => i.status === 'completed').length,
+                'in-progress': initiatives.filter(i => i.status === 'in-progress').length,
+                'at-risk': initiatives.filter(i => i.status === 'at-risk').length,
+                'not-started': initiatives.filter(i => i.status === 'not-started').length
+            };
+
+            window.chartInstances.statusChart = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'In Progress', 'At Risk', 'Not Started'],
+                    datasets: [{
+                        data: Object.values(statusCounts),
+                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#6b7280'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 15, font: { size: 12, weight: '600' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Budget by Tier Chart
+        const budgetCtx = document.getElementById('budgetChart');
+        if (budgetCtx) {
+            const tierBudgets = {};
+            initiatives.forEach(i => {
+                if (!tierBudgets[i.tier]) tierBudgets[i.tier] = 0;
+                tierBudgets[i.tier] += i.budget || 0;
+            });
+
+            window.chartInstances.budgetChart = new Chart(budgetCtx, {
+                type: 'bar',
+                data: {
                     labels: Object.keys(tierBudgets),
                     datasets: [{
                         label: 'Budget (SAR)',
