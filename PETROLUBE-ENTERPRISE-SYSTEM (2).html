@@ -5197,7 +5197,7 @@ function renderPortfolioDistributionMatrix() {
 
     const enrichedInitiatives = initiatives.map(init => {
         const key = `${init.core}-${init.innovation}`;
-        const pos = positionMap[key];
+        const pos = positionMap[key] || { x: 0.5, y: 0.5 }; // Default to center if key not found
         return {
             ...init,
             x: (pos.x + jitter()) * innerWidth,
