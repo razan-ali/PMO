@@ -2464,11 +2464,19 @@ function renderDashboardPage() {
 // ============================================================================
 
 function getInitiatives() {
-    // Return all initiatives data with status and progress calculated
-    return INITIATIVES_DATA.map(init => ({
-        ...init,
-        ...calculateInitiativeStatus(init)
-    }));
+    // Merge portfolio_category from SAMPLE_PROJECTS into INITIATIVES_DATA
+    return INITIATIVES_DATA.map(init => {
+        // Try to find matching project in SAMPLE_PROJECTS by ID
+        const matchingProject = typeof SAMPLE_PROJECTS !== 'undefined' ?
+            SAMPLE_PROJECTS.find(p => p.criteriaValues?.initiative_id === init.id) : null;
+
+        return {
+            ...init,
+            ...calculateInitiativeStatus(init),
+            // Add portfolio_category if found in SAMPLE_PROJECTS
+            portfolio_category: matchingProject?.criteriaValues?.portfolio_category || null
+        };
+    });
 }
 
 function renderExecutiveSummary() {
@@ -4920,17 +4928,21 @@ IRR: ${project.criteriaValues?.irr_percentage || 'N/A'}%
 // ============================================================================
 
 function classifyInitiative(init) {
-    // Use existing category field from initiative data (e.g., 'Core-Incremental', 'Non-Core-Disruptive')
-    if (init.category) {
-        const parts = init.category.split('-');
+    // Use existing portfolio_category field from initiative data
+    // Can be in init.portfolio_category or init.criteriaValues.portfolio_category
+    const portfolioCategory = init.portfolio_category || init.criteriaValues?.portfolio_category;
 
-        // Handle 'Non-Core' as a special case since it contains a hyphen
+    if (portfolioCategory) {
+        // Format: 'core_incremental', 'core_disruptive', 'non_core_incremental', 'non_core_disruptive'
+        const parts = portfolioCategory.split('_');
+
+        // Handle 'non_core' vs 'core'
         let coreValue, innovationValue;
-        if (parts[0] === 'Non' && parts[1] === 'Core') {
+        if (parts[0] === 'non' && parts[1] === 'core') {
             coreValue = 'non-core';
             innovationValue = parts[2]?.toLowerCase() || 'incremental';
         } else {
-            coreValue = parts[0].toLowerCase();
+            coreValue = parts[0]?.toLowerCase() || 'core';
             innovationValue = parts[1]?.toLowerCase() || 'incremental';
         }
 
@@ -4940,8 +4952,15 @@ function classifyInitiative(init) {
         };
     }
 
-    // Fallback if category field is missing
-    return { core: 'core', innovation: 'incremental' };
+    // Fallback: Classify based on tier and budget
+    const isCore = init.tier === '1a' || init.tier === '1b' || init.budget > 8000000;
+    const disruptiveKeywords = ['transformation', 'innovation', 'digital', 'ai', 'analytics', 'platform', 'modernization'];
+    const isDisruptive = disruptiveKeywords.some(keyword => init.name?.toLowerCase().includes(keyword)) || init.criticalPath;
+
+    return {
+        core: isCore ? 'core' : 'non-core',
+        innovation: isDisruptive ? 'disruptive' : 'incremental'
+    };
 }
 
 function renderPortfolioImpactMatrix() {
