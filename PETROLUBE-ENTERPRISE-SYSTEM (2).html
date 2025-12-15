@@ -1735,11 +1735,12 @@ function renderHeader() {
                     </div>
                 </div>
                 <nav>
-                    ${['dashboard', 'projects', 'templates', 'scenarios', 'insights', 'admin'].map(page => `
-                        <a href="#" class="nav-link ${state.currentPage === page ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('${page}');">
-                            ${page.charAt(0).toUpperCase() + page.slice(1)}
-                        </a>
-                    `).join('')}
+                    <a href="#" class="nav-link ${state.currentPage === 'dashboard' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('dashboard');">Dashboard</a>
+                    <a href="#" class="nav-link ${state.currentPage === 'projects' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('projects');">Projects</a>
+                    <a href="#" class="nav-link ${state.currentPage === 'templates' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('templates');">Templates</a>
+                    <a href="#" class="nav-link ${state.currentPage === 'scenarios' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('scenarios');">Scenarios</a>
+                    <a href="#" class="nav-link ${state.currentPage === 'insights' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('insights');">Insights</a>
+                    <a href="#" class="nav-link ${state.currentPage === 'admin' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('admin');">Admin</a>
                 </nav>
                 <div class="user-info">
                     <div class="user-badge">
