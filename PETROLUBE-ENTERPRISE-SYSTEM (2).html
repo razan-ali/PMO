@@ -999,6 +999,169 @@ footer a {
     font-weight: 600;
     margin-left: 8px;
 }
+
+/* Status Indicators */
+.status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.status-not-started {
+    background: var(--neutral-200);
+    color: var(--neutral-700);
+}
+
+.status-in-progress {
+    background: var(--blue-100);
+    color: var(--blue-600);
+}
+
+.status-at-risk {
+    background: var(--red-100);
+    color: var(--red-600);
+}
+
+.status-completed {
+    background: var(--petro-green-100);
+    color: var(--petro-green-700);
+}
+
+/* Progress Bar */
+.progress-container {
+    width: 80px;
+    height: 8px;
+    background: var(--neutral-200);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: var(--petro-green-600);
+    transition: width 0.3s ease;
+    border-radius: 4px;
+}
+
+.progress-bar.at-risk {
+    background: var(--red-600);
+}
+
+.progress-bar.completed {
+    background: var(--petro-green-700);
+}
+
+/* Tier Grouping */
+.tier-group-header {
+    background: var(--neutral-100);
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.tier-group-header:hover {
+    background: var(--neutral-200);
+}
+
+.tier-group-header td {
+    padding: 16px 12px !important;
+    border-bottom: 2px solid var(--neutral-300) !important;
+}
+
+.tier-group-collapsed {
+    display: none;
+}
+
+.tier-chevron {
+    display: inline-block;
+    margin-right: 8px;
+    transition: transform 0.2s;
+    font-weight: 700;
+}
+
+.tier-chevron.collapsed {
+    transform: rotate(-90deg);
+}
+
+/* Today Marker */
+.today-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--red-600);
+    z-index: 4;
+    pointer-events: none;
+}
+
+.today-marker::before {
+    content: 'TODAY';
+    position: absolute;
+    top: -20px;
+    left: -18px;
+    background: var(--red-600);
+    color: white;
+    padding: 2px 6px;
+    font-size: 9px;
+    font-weight: 700;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+/* View Mode Toggle */
+.view-toggle {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--neutral-300);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.view-toggle-btn {
+    padding: 6px 16px;
+    background: white;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--neutral-700);
+}
+
+.view-toggle-btn:hover {
+    background: var(--neutral-100);
+}
+
+.view-toggle-btn.active {
+    background: var(--petro-green-600);
+    color: white;
+}
+
+/* Improved Spacing */
+.gantt-table tbody tr {
+    border-left: 3px solid transparent;
+}
+
+.gantt-table tbody tr:hover {
+    background: var(--petro-green-50);
+    border-left-color: var(--petro-green-600);
+}
+
+.gantt-table tbody tr.at-risk-row {
+    background: rgba(220, 38, 38, 0.03);
+}
+
+.gantt-table tbody tr.at-risk-row:hover {
+    background: rgba(220, 38, 38, 0.08);
+    border-left-color: var(--red-600);
+}
 `;
 
 // ============================================================================
@@ -1945,9 +2108,9 @@ class AIAgent {
 
 const INITIATIVES_DATA = [
     // TIER 1A - Strategic Initiatives (15 initiatives)
-    { id: 'PET-2025-001', name: 'Digital Transformation Program', tier: '1a', start: '2025-01', end: '2025-12', duration: 12, criticalPath: true, dependencies: ['PET-2025-002'], owner: 'CIO', budget: 15000000 },
-    { id: 'PET-2025-002', name: 'Cloud Migration & Infrastructure Modernization', tier: '1a', start: '2025-01', end: '2025-09', duration: 9, criticalPath: true, dependencies: [], owner: 'IT Director', budget: 8000000 },
-    { id: 'PET-2025-003', name: 'Advanced Analytics & AI Platform', tier: '1a', start: '2025-03', end: '2025-12', duration: 10, criticalPath: true, dependencies: ['PET-2025-002'], owner: 'CDO', budget: 12000000 },
+    { id: 'PET-2025-001', name: 'Digital Transformation Program', tier: '1a', start: '2025-01', end: '2025-12', duration: 12, criticalPath: true, dependencies: ['PET-2025-002'], owner: 'CIO', budget: 15000000, status: 'in-progress', progress: 85 },
+    { id: 'PET-2025-002', name: 'Cloud Migration & Infrastructure Modernization', tier: '1a', start: '2025-01', end: '2025-09', duration: 9, criticalPath: true, dependencies: [], owner: 'IT Director', budget: 8000000, status: 'completed', progress: 100 },
+    { id: 'PET-2025-003', name: 'Advanced Analytics & AI Platform', tier: '1a', start: '2025-03', end: '2025-12', duration: 10, criticalPath: true, dependencies: ['PET-2025-002'], owner: 'CDO', budget: 12000000, status: 'in-progress', progress: 70 },
     { id: 'PET-2025-004', name: 'Supply Chain Optimization Initiative', tier: '1a', start: '2025-02', end: '2025-11', duration: 10, criticalPath: false, dependencies: ['PET-2025-003'], owner: 'COO', budget: 6000000 },
     { id: 'PET-2025-005', name: 'Customer Experience Transformation', tier: '1a', start: '2025-01', end: '2025-10', duration: 10, criticalPath: false, dependencies: [], owner: 'CMO', budget: 5000000 },
     { id: 'PET-2025-006', name: 'Sustainability & ESG Integration', tier: '1a', start: '2025-02', end: '2025-12', duration: 11, criticalPath: false, dependencies: [], owner: 'CSO', budget: 10000000 },
@@ -2054,7 +2217,15 @@ const state = {
         showCriticalPath: false,
         showDependencies: false,
         searchQuery: ''
-    }
+    },
+    ganttCollapsed: {
+        '1a': false,
+        '1b': false,
+        '1c': false,
+        '1d': false,
+        'contingent': false
+    },
+    ganttViewMode: 'detailed' // 'detailed' or 'summary'
 };
 
 // ============================================================================
@@ -2841,11 +3012,44 @@ function renderAdmin() {
 // TRACKING PAGE - GANTT CHART
 // ============================================================================
 
+// Helper function to calculate initiative status and progress
+function calculateInitiativeStatus(initiative) {
+    const now = new Date('2025-12-15'); // Current date
+    const startDate = new Date(initiative.start + '-01');
+    const endDate = new Date(initiative.end + '-01');
+    endDate.setMonth(endDate.getMonth() + 1); // End of month
+
+    const totalDuration = endDate - startDate;
+    const elapsed = now - startDate;
+    const progress = Math.max(0, Math.min(100, Math.round((elapsed / totalDuration) * 100)));
+
+    let status;
+    if (now < startDate) {
+        status = 'not-started';
+    } else if (now > endDate) {
+        status = 'completed';
+    } else if (initiative.criticalPath && progress < 50) {
+        status = 'at-risk';
+    } else if (progress < 30) {
+        status = 'at-risk';
+    } else {
+        status = 'in-progress';
+    }
+
+    return { status, progress };
+}
+
 function renderTracking() {
     const filters = state.ganttFilters;
 
-    // Filter initiatives based on current filters
-    let filteredInitiatives = INITIATIVES_DATA.slice();
+    // Add status and progress to all initiatives
+    const enrichedInitiatives = INITIATIVES_DATA.map(init => ({
+        ...init,
+        ...calculateInitiativeStatus(init)
+    }));
+
+    // Filter initiatives
+    let filteredInitiatives = enrichedInitiatives.slice();
 
     if (filters.tier !== 'all') {
         filteredInitiatives = filteredInitiatives.filter(init => init.tier === filters.tier);
@@ -2868,48 +3072,71 @@ function renderTracking() {
         );
     }
 
+    // Group by tier
+    const tierGroups = {
+        '1a': { name: 'Tier 1A - Strategic Initiatives', initiatives: [], color: 'var(--petro-green-700)' },
+        '1b': { name: 'Tier 1B - High Priority', initiatives: [], color: 'var(--petro-green-600)' },
+        '1c': { name: 'Tier 1C - Medium Priority', initiatives: [], color: 'var(--blue-600)' },
+        '1d': { name: 'Tier 1D - Lower Priority', initiatives: [], color: 'var(--petro-orange-600)' },
+        'contingent': { name: 'Contingent - Conditional Initiatives', initiatives: [], color: 'var(--neutral-500)' }
+    };
+
+    filteredInitiatives.forEach(init => {
+        if (tierGroups[init.tier]) {
+            tierGroups[init.tier].initiatives.push(init);
+        }
+    });
+
     // Calculate statistics
     const stats = {
         total: filteredInitiatives.length,
-        tier1a: filteredInitiatives.filter(i => i.tier === '1a').length,
-        tier1b: filteredInitiatives.filter(i => i.tier === '1b').length,
-        tier1c: filteredInitiatives.filter(i => i.tier === '1c').length,
-        tier1d: filteredInitiatives.filter(i => i.tier === '1d').length,
-        contingent: filteredInitiatives.filter(i => i.tier === 'contingent').length,
+        inProgress: filteredInitiatives.filter(i => i.status === 'in-progress').length,
+        atRisk: filteredInitiatives.filter(i => i.status === 'at-risk').length,
+        completed: filteredInitiatives.filter(i => i.status === 'completed').length,
+        notStarted: filteredInitiatives.filter(i => i.status === 'not-started').length,
         criticalPath: filteredInitiatives.filter(i => i.criticalPath).length,
         totalBudget: filteredInitiatives.reduce((sum, i) => sum + i.budget, 0)
     };
+
+    // Calculate today marker position (Dec 15 = month 11, mid-month = 11.5)
+    const todayPosition = ((11 + 0.5) / 12) * 100;
 
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     return `
         <div class="container" style="padding: 40px 32px;">
-            <div style="margin-bottom: 32px;">
-                <h1 style="margin-bottom: 8px;">Initiative Tracking</h1>
-                <p style="color: var(--neutral-600); font-size: 15px;">2025 Portfolio Gantt Chart - ${stats.total} Initiatives</p>
+            <div style="margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1 style="margin-bottom: 8px;">Initiative Tracking & Timeline</h1>
+                    <p style="color: var(--neutral-600); font-size: 15px;">2025 Portfolio Gantt Chart - ${stats.total} Initiatives</p>
+                </div>
+                <div class="view-toggle">
+                    <button class="view-toggle-btn active">Detailed View</button>
+                    <button class="view-toggle-btn" onclick="alert('Summary view coming soon!')">Summary View</button>
+                </div>
             </div>
 
-            <!-- Statistics -->
+            <!-- Status Statistics -->
             <div class="gantt-stats">
                 <div class="gantt-stat">
                     <div class="gantt-stat-label">Total Initiatives</div>
                     <div class="gantt-stat-value">${stats.total}</div>
                 </div>
-                <div class="gantt-stat" style="border-left-color: var(--petro-green-700);">
-                    <div class="gantt-stat-label">Tier 1A</div>
-                    <div class="gantt-stat-value">${stats.tier1a}</div>
-                </div>
-                <div class="gantt-stat" style="border-left-color: var(--petro-green-600);">
-                    <div class="gantt-stat-label">Tier 1B</div>
-                    <div class="gantt-stat-value">${stats.tier1b}</div>
-                </div>
                 <div class="gantt-stat" style="border-left-color: var(--blue-600);">
-                    <div class="gantt-stat-label">Tier 1C</div>
-                    <div class="gantt-stat-value">${stats.tier1c}</div>
+                    <div class="gantt-stat-label">In Progress</div>
+                    <div class="gantt-stat-value">${stats.inProgress}</div>
                 </div>
                 <div class="gantt-stat" style="border-left-color: var(--red-600);">
-                    <div class="gantt-stat-label">Critical Path</div>
-                    <div class="gantt-stat-value">${stats.criticalPath}</div>
+                    <div class="gantt-stat-label">At Risk</div>
+                    <div class="gantt-stat-value">${stats.atRisk}</div>
+                </div>
+                <div class="gantt-stat" style="border-left-color: var(--petro-green-700);">
+                    <div class="gantt-stat-label">Completed</div>
+                    <div class="gantt-stat-value">${stats.completed}</div>
+                </div>
+                <div class="gantt-stat" style="border-left-color: var(--neutral-400);">
+                    <div class="gantt-stat-label">Not Started</div>
+                    <div class="gantt-stat-value">${stats.notStarted}</div>
                 </div>
                 <div class="gantt-stat" style="border-left-color: var(--petro-gold-600);">
                     <div class="gantt-stat-label">Total Budget</div>
@@ -2950,19 +3177,19 @@ function renderTracking() {
                         `<button class="btn btn-secondary btn-sm" onclick="clearGanttFilters()">Clear Filters</button>` : ''}
                 </div>
 
-                <!-- Gantt Chart -->
+                <!-- Gantt Chart with Grouping -->
                 <div class="gantt-container">
                     <table class="gantt-table">
                         <thead>
                             <tr>
                                 <th style="width: 120px;">ID</th>
-                                <th style="width: 320px;">Initiative Name</th>
-                                <th style="width: 100px;">Tier</th>
-                                <th style="width: 150px;">Owner</th>
-                                <th style="width: 120px;">Duration</th>
-                                <th style="width: 120px;">Budget</th>
+                                <th style="width: 280px;">Initiative Name</th>
+                                <th style="width: 110px;">Status</th>
+                                <th style="width: 100px;">Progress</th>
+                                <th style="width: 140px;">Owner</th>
+                                <th style="width: 100px;">Budget</th>
                                 <th style="width: 900px; position: relative;">
-                                    <div style="text-align: center; margin-bottom: 8px; font-weight: 700;">2025 Timeline</div>
+                                    <div style="text-align: center; margin-bottom: 8px; font-weight: 700;">2025 Timeline (Today: Dec 15)</div>
                                     <div style="display: flex;">
                                         ${months.map((month, idx) => `
                                             <div style="flex: 1; text-align: center; font-size: 11px; font-weight: 600; padding: 4px; ${[0, 3, 6, 9].includes(idx) ? 'background: var(--petro-gold-100); border-left: 2px solid var(--petro-gold-500);' : ''}">${month}</div>
@@ -2972,7 +3199,19 @@ function renderTracking() {
                             </tr>
                         </thead>
                         <tbody>
-                            ${filteredInitiatives.map(initiative => renderGanttRow(initiative)).join('')}
+                            ${Object.entries(tierGroups).map(([tier, group]) => {
+                                if (group.initiatives.length === 0) return '';
+                                const isCollapsed = state.ganttCollapsed[tier];
+                                return `
+                                    <tr class="tier-group-header" onclick="toggleTierGroup('${tier}')">
+                                        <td colspan="7" style="color: ${group.color};">
+                                            <span class="tier-chevron ${isCollapsed ? 'collapsed' : ''}">▼</span>
+                                            ${group.name} (${group.initiatives.length})
+                                        </td>
+                                    </tr>
+                                    ${group.initiatives.map(init => renderGanttRow(init, isCollapsed, todayPosition)).join('')}
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -2981,8 +3220,10 @@ function renderTracking() {
     `;
 }
 
-function renderGanttRow(initiative) {
+function renderGanttRow(initiative, isCollapsed, todayPosition) {
     const tierClass = `tier-${initiative.tier}`;
+    const statusClass = `status-${initiative.status}`;
+    const rowClass = initiative.status === 'at-risk' ? 'at-risk-row' : '';
 
     // Calculate timeline position (months 0-11 for Jan-Dec 2025)
     const startMonth = parseInt(initiative.start.split('-')[1]) - 1; // 0-indexed
@@ -2993,15 +3234,33 @@ function renderGanttRow(initiative) {
     const leftPercent = (startMonth / 12) * 100;
     const widthPercent = (duration / 12) * 100;
 
+    // Status labels
+    const statusLabels = {
+        'not-started': 'Not Started',
+        'in-progress': 'In Progress',
+        'at-risk': 'At Risk',
+        'completed': 'Completed'
+    };
+
+    // Progress bar class
+    const progressBarClass = initiative.status === 'at-risk' ? 'at-risk' : (initiative.status === 'completed' ? 'completed' : '');
+
     return `
-        <tr>
+        <tr class="${rowClass} ${isCollapsed ? 'tier-group-collapsed' : ''}">
             <td class="initiative-id">${initiative.id}</td>
             <td class="initiative-name">${initiative.name}</td>
             <td>
-                <span class="initiative-tier ${tierClass}">${initiative.tier.toUpperCase()}</span>
+                <span class="status-badge ${statusClass}">${statusLabels[initiative.status]}</span>
+            </td>
+            <td>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div class="progress-container">
+                        <div class="progress-bar ${progressBarClass}" style="width: ${initiative.progress}%;"></div>
+                    </div>
+                    <span style="font-size: 12px; font-weight: 600; color: var(--neutral-700); min-width: 35px;">${initiative.progress}%</span>
+                </div>
             </td>
             <td style="font-size: 12px; color: var(--neutral-600);">${initiative.owner}</td>
-            <td class="initiative-dates">${initiative.duration} months</td>
             <td style="font-size: 12px; font-weight: 600;">$${(initiative.budget / 1000000).toFixed(1)}M</td>
             <td class="timeline-cell">
                 <div class="timeline-grid">
@@ -3009,12 +3268,13 @@ function renderGanttRow(initiative) {
                         <div class="timeline-quarter-marker" style="left: ${(quarterStart / 12) * 100}%;"></div>
                     `).join('')}
                     ${Array(12).fill(0).map((_, i) => '<div class="timeline-month"></div>').join('')}
+                    <div class="today-marker" style="left: ${todayPosition}%;"></div>
                 </div>
                 <div class="gantt-bar ${tierClass} ${initiative.criticalPath ? 'critical-path' : ''} ${initiative.dependencies && initiative.dependencies.length > 0 ? 'has-dependencies' : ''}"
                      style="left: ${leftPercent}%; width: ${widthPercent}%;"
                      onmouseenter="showGanttTooltip(event, ${JSON.stringify(initiative).replace(/"/g, '&quot;')})"
                      onmouseleave="hideGanttTooltip()">
-                    ${duration >= 2 ? initiative.duration + 'm' : ''}
+                    ${duration >= 2 ? initiative.progress + '%' : ''}
                 </div>
             </td>
         </tr>
@@ -3037,6 +3297,11 @@ function clearGanttFilters() {
     render();
 }
 
+function toggleTierGroup(tier) {
+    state.ganttCollapsed[tier] = !state.ganttCollapsed[tier];
+    render();
+}
+
 // Tooltip Functions
 let tooltipTimeout;
 function showGanttTooltip(event, initiative) {
@@ -3052,14 +3317,27 @@ function showGanttTooltip(event, initiative) {
 
     tooltipTimeout = setTimeout(() => {
         const tooltipEl = document.getElementById('gantt-tooltip');
+
+        // Status labels and colors
+        const statusInfo = {
+            'not-started': { label: 'Not Started', color: 'var(--neutral-600)' },
+            'in-progress': { label: 'In Progress', color: 'var(--blue-600)' },
+            'at-risk': { label: 'At Risk ⚠️', color: 'var(--red-600)' },
+            'completed': { label: 'Completed ✓', color: 'var(--petro-green-700)' }
+        };
+
+        const status = statusInfo[initiative.status] || statusInfo['in-progress'];
+
         tooltipEl.innerHTML = `
             <div class="gantt-tooltip-title">${initiative.name}</div>
             <div class="gantt-tooltip-detail"><strong>ID:</strong> ${initiative.id}</div>
             <div class="gantt-tooltip-detail"><strong>Tier:</strong> ${initiative.tier.toUpperCase()}</div>
+            <div class="gantt-tooltip-detail" style="color: ${status.color}; font-weight: 700;"><strong>Status:</strong> ${status.label}</div>
+            <div class="gantt-tooltip-detail"><strong>Progress:</strong> ${initiative.progress}% complete</div>
             <div class="gantt-tooltip-detail"><strong>Owner:</strong> ${initiative.owner}</div>
             <div class="gantt-tooltip-detail"><strong>Duration:</strong> ${initiative.duration} months (${initiative.start} to ${initiative.end})</div>
             <div class="gantt-tooltip-detail"><strong>Budget:</strong> $${(initiative.budget / 1000000).toFixed(2)}M</div>
-            ${initiative.criticalPath ? '<div class="gantt-tooltip-detail" style="color: var(--red-600); font-weight: 700;">⚠️ Critical Path</div>' : ''}
+            ${initiative.criticalPath ? '<div class="gantt-tooltip-detail" style="color: var(--red-600); font-weight: 700;">⚠️ Critical Path Initiative</div>' : ''}
             ${initiative.dependencies && initiative.dependencies.length > 0 ? `<div class="gantt-tooltip-detail"><strong>Dependencies:</strong> ${initiative.dependencies.join(', ')}</div>` : ''}
         `;
 
