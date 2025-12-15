@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PETROLUBE - Enterprise Initiative Management</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 <div id="app-root"></div>
@@ -2225,7 +2226,9 @@ const state = {
         '1d': false,
         'contingent': false
     },
-    ganttViewMode: 'detailed' // 'detailed' or 'summary'
+    ganttViewMode: 'detailed', // 'detailed' or 'summary'
+    // Dashboard State
+    dashboardPage: 'executive' // 'executive', 'portfolio', 'maturity', 'engines', 'financial', 'budget', 'risk', 'dependencies'
 };
 
 // ============================================================================
@@ -2383,90 +2386,430 @@ function renderPage() {
 }
 
 function renderDashboard() {
-    const data = state.store.getData();
-    const template = data.templates[0];
-    const scored = data.projects.filter(p => p.scores && p.scores.compositeScore);
-    const avgScore = scored.length > 0 
-        ? scored.reduce((sum, p) => sum + p.scores.compositeScore, 0) / scored.length
-        : 0;
-    const totalBudget = data.projects.reduce((sum, p) => sum + (p.criteriaValues?.investment_required || 0), 0);
-    const blocked = data.projects.filter(p => p.status === 'Blocked').length;
+    const dashboardPages = [
+        { id: 'executive', label: 'Executive Summary', icon: '📊' },
+        { id: 'portfolio', label: 'Portfolio & Delivery', icon: '📈' },
+        { id: 'maturity', label: 'BCG i2i Maturity', icon: '🎯' },
+        { id: 'engines', label: 'Three Engines', icon: '⚙️' },
+        { id: 'financial', label: 'Financial & ROI', icon: '💰' },
+        { id: 'budget', label: 'Budget & Resources', icon: '💼' },
+        { id: 'risk', label: 'Risk Management', icon: '⚠️' },
+        { id: 'dependencies', label: 'Dependencies', icon: '🔗' }
+    ];
 
     return `
         <div class="container" style="padding: 40px 32px;">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 40px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 32px;">
                 <div>
-                    <h1 style="font-size: 32px; margin-bottom: 8px; font-weight: 800;">Portfolio Dashboard</h1>
-                    <p style="color: var(--neutral-600); font-size: 15px;">Real-time initiative analytics and portfolio health monitoring</p>
+                    <h1 style="font-size: 32px; margin-bottom: 8px; font-weight: 800;">Strategic Portfolio Dashboard</h1>
+                    <p style="color: var(--neutral-600); font-size: 15px;">Comprehensive initiative analytics and enterprise performance monitoring</p>
                 </div>
-                <button class="btn btn-gold" onclick="openProjectWizard()">
-                    <span>🤖</span> New Initiative
-                </button>
             </div>
 
+            <!-- Dashboard Sub-Navigation -->
+            <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; gap: 8px; overflow-x: auto;">
+                ${dashboardPages.map(page => `
+                    <button
+                        class="btn ${state.dashboardPage === page.id ? 'btn-primary' : 'btn-secondary'}"
+                        style="white-space: nowrap; font-size: 13px; padding: 10px 16px;"
+                        onclick="navigateToDashboardPage('${page.id}')">
+                        ${page.icon} ${page.label}
+                    </button>
+                `).join('')}
+            </div>
+
+            <!-- Dashboard Page Content -->
+            ${renderDashboardPage()}
+        </div>
+    `;
+}
+
+function navigateToDashboardPage(pageId) {
+    state.dashboardPage = pageId;
+    render();
+    // Initialize charts after render
+    setTimeout(() => {
+        if (typeof initializeDashboardCharts === 'function') {
+            initializeDashboardCharts();
+        }
+    }, 100);
+}
+
+function renderDashboardPage() {
+    switch (state.dashboardPage) {
+        case 'executive':
+            return renderExecutiveSummary();
+        case 'portfolio':
+            return renderPortfolioDelivery();
+        case 'maturity':
+            return renderBCGMaturity();
+        case 'engines':
+            return renderThreeEngines();
+        case 'financial':
+            return renderFinancial();
+        case 'budget':
+            return renderBudget();
+        case 'risk':
+            return renderRisk();
+        case 'dependencies':
+            return renderDependencies();
+        default:
+            return renderExecutiveSummary();
+    }
+}
+
+// ============================================================================
+// DASHBOARD SUB-PAGES
+// ============================================================================
+
+function renderExecutiveSummary() {
+    const initiatives = getInitiatives();
+    const totalBudget = initiatives.reduce((sum, i) => sum + i.budget, 0);
+    const completedCount = initiatives.filter(i => calculateInitiativeStatus(i).status === 'completed').length;
+    const atRiskCount = initiatives.filter(i => calculateInitiativeStatus(i).status === 'at-risk').length;
+    const avgProgress = initiatives.reduce((sum, i) => sum + calculateInitiativeStatus(i).progress, 0) / initiatives.length;
+
+    return `
+        <div>
+            <!-- KPI Cards -->
             <div class="grid grid-4 mb-6">
                 <div class="stat-card">
                     <div class="stat-card-header">Total Initiatives</div>
-                    <div class="stat-card-value" style="color: var(--petro-green-800);">${data.projects.length}</div>
-                    <div class="stat-card-footer">${scored.length} scored, ${blocked} blocked</div>
+                    <div class="stat-card-value" style="color: var(--petro-green-800);">${initiatives.length}</div>
+                    <div class="stat-card-footer">Active portfolio</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-card-header">Avg Score</div>
-                    <div class="stat-card-value" style="color: var(--petro-gold-600);">${avgScore.toFixed(1)}</div>
-                    <div class="stat-card-footer">out of 100 points</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-card-header">Total Investment</div>
+                    <div class="stat-card-header">Portfolio Budget</div>
                     <div class="stat-card-value" style="color: var(--blue-600);">${(totalBudget / 1000000).toFixed(0)}M</div>
-                    <div class="stat-card-footer">SAR committed</div>
+                    <div class="stat-card-footer">SAR total investment</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-card-header">High Priority</div>
-                    <div class="stat-card-value" style="color: ${blocked > 0 ? 'var(--red-600)' : 'var(--petro-green-700)'};">${data.projects.filter(p => p.criteriaValues?.strategic_priority === 'p1_critical').length}</div>
-                    <div class="stat-card-footer">P1 Critical initiatives</div>
+                    <div class="stat-card-header">Completion Rate</div>
+                    <div class="stat-card-value" style="color: var(--petro-green-700);">${completedCount}</div>
+                    <div class="stat-card-footer">${((completedCount / initiatives.length) * 100).toFixed(0)}% completed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">At Risk</div>
+                    <div class="stat-card-value" style="color: var(--red-600);">${atRiskCount}</div>
+                    <div class="stat-card-footer">Require attention</div>
                 </div>
             </div>
 
-            ${blocked > 0 ? `
-                <div class="alert alert-danger mb-6">
-                    <div style="font-size: 20px;">⚠️</div>
-                    <div>
-                        <strong style="font-weight: 700;">Attention Required</strong><br>
-                        <span style="font-size: 14px;">${blocked} initiative(s) blocked by kill-switch rules. Review required before proceeding.</span>
+            <!-- Charts Row -->
+            <div class="grid grid-2 mb-6" style="gap: 24px;">
+                <div class="card">
+                    <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">Status Distribution</h2>
+                    <canvas id="statusChart" style="max-height: 300px;"></canvas>
+                </div>
+                <div class="card">
+                    <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">Budget by Tier</h2>
+                    <canvas id="budgetChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+
+            <!-- Progress Timeline -->
+            <div class="card">
+                <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">Overall Portfolio Progress</h2>
+                <div style="display: flex; align-items: center; gap: 16px; padding: 20px; background: var(--neutral-50); border-radius: 8px;">
+                    <div style="flex: 1;">
+                        <div style="height: 32px; background: var(--neutral-200); border-radius: 16px; overflow: hidden;">
+                            <div style="height: 100%; width: ${avgProgress.toFixed(0)}%; background: linear-gradient(90deg, var(--petro-green-600), var(--petro-green-500)); display: flex; align-items: center; justify-content: flex-end; padding-right: 16px; color: white; font-weight: 700; font-size: 14px;">
+                                ${avgProgress.toFixed(0)}%
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: center; min-width: 100px;">
+                        <div style="font-size: 24px; font-weight: 800; color: var(--petro-green-700);">${avgProgress.toFixed(0)}%</div>
+                        <div style="font-size: 12px; color: var(--neutral-600);">Complete</div>
                     </div>
                 </div>
-            ` : ''}
+            </div>
+        </div>
+    `;
+}
 
-            <div class="grid grid-3 mb-6" style="gap: 24px; grid-template-columns: 2fr 1fr;">
+function renderPortfolioDelivery() {
+    const initiatives = getInitiatives();
+
+    return `
+        <div>
+            <div class="card mb-6">
+                <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">Portfolio Value Matrix</h2>
+                <div id="portfolioMatrix" style="position: relative; height: 500px; width: 100%;"></div>
+            </div>
+
+            <div class="grid grid-2 mb-6" style="gap: 24px;">
                 <div class="card">
-                    <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 24px; color: var(--neutral-900);">Portfolio Impact Matrix</h2>
-                    ${renderPortfolioMatrix()}
+                    <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">Delivery Timeline</h2>
+                    <canvas id="deliveryChart" style="max-height: 300px;"></canvas>
                 </div>
                 <div class="card">
-                    <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">Quick Actions</h2>
-                    <div style="display: flex; flex-direction: column; gap: 12px;">
-                        <button class="btn btn-primary btn-block" onclick="runPrioritization()">
-                            <span>⚡</span> Run Prioritization
-                        </button>
-                        <button class="btn btn-secondary btn-block" onclick="navigateTo('projects')">
-                            <span>📋</span> View All Projects
-                        </button>
-                        <button class="btn btn-secondary btn-block" onclick="navigateTo('scenarios')">
-                            <span>🎯</span> Manage Scenarios
-                        </button>
-                        <button class="btn btn-secondary btn-block" onclick="navigateTo('insights')">
-                            <span>💡</span> View Insights
-                        </button>
+                    <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">Tier Distribution</h2>
+                    <canvas id="tierChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderBCGMaturity() {
+    return `
+        <div>
+            <div class="card mb-6">
+                <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">BCG i2i Digital Maturity Assessment</h2>
+                <canvas id="maturityRadar" style="max-height: 450px;"></canvas>
+            </div>
+
+            <div class="grid grid-3 mb-6" style="gap: 24px;">
+                <div class="card">
+                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--petro-green-800);">Strategy</h3>
+                    <div style="font-size: 32px; font-weight: 800; color: var(--petro-green-700); margin-bottom: 8px;">3.8</div>
+                    <div style="font-size: 13px; color: var(--neutral-600);">Digital strategy & vision alignment</div>
+                </div>
+                <div class="card">
+                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--blue-700);">Technology</h3>
+                    <div style="font-size: 32px; font-weight: 800; color: var(--blue-600); margin-bottom: 8px;">3.5</div>
+                    <div style="font-size: 13px; color: var(--neutral-600);">Technology infrastructure & tools</div>
+                </div>
+                <div class="card">
+                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--petro-gold-700);">People</h3>
+                    <div style="font-size: 32px; font-weight: 800; color: var(--petro-gold-600); margin-bottom: 8px;">3.2</div>
+                    <div style="font-size: 13px; color: var(--neutral-600);">Talent & capability development</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderThreeEngines() {
+    return `
+        <div>
+            <div class="grid grid-3 mb-6" style="gap: 24px;">
+                <div class="card" style="border-top: 4px solid var(--petro-green-600);">
+                    <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 16px; color: var(--petro-green-800);">Engine 1: Run</h3>
+                    <div style="font-size: 28px; font-weight: 800; color: var(--petro-green-700); margin-bottom: 8px;">32 Initiatives</div>
+                    <div style="font-size: 14px; color: var(--neutral-600); margin-bottom: 20px;">Operational excellence & efficiency</div>
+                    <div class="progress-container" style="height: 12px; margin-bottom: 12px;">
+                        <div class="progress-bar" style="width: 68%; background: var(--petro-green-600);"></div>
+                    </div>
+                    <div style="font-size: 13px; font-weight: 600; color: var(--neutral-700);">68% Complete</div>
+                </div>
+                <div class="card" style="border-top: 4px solid var(--blue-600);">
+                    <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 16px; color: var(--blue-800);">Engine 2: Grow</h3>
+                    <div style="font-size: 28px; font-weight: 800; color: var(--blue-700); margin-bottom: 8px;">24 Initiatives</div>
+                    <div style="font-size: 14px; color: var(--neutral-600); margin-bottom: 20px;">Business growth & market expansion</div>
+                    <div class="progress-container" style="height: 12px; margin-bottom: 12px;">
+                        <div class="progress-bar" style="width: 52%; background: var(--blue-600);"></div>
+                    </div>
+                    <div style="font-size: 13px; font-weight: 600; color: var(--neutral-700);">52% Complete</div>
+                </div>
+                <div class="card" style="border-top: 4px solid var(--petro-gold-600);">
+                    <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 16px; color: var(--petro-gold-800);">Engine 3: Transform</h3>
+                    <div style="font-size: 28px; font-weight: 800; color: var(--petro-gold-700); margin-bottom: 8px;">15 Initiatives</div>
+                    <div style="font-size: 14px; color: var(--neutral-600); margin-bottom: 20px;">Innovation & digital transformation</div>
+                    <div class="progress-container" style="height: 12px; margin-bottom: 12px;">
+                        <div class="progress-bar" style="width: 38%; background: var(--petro-gold-600);"></div>
+                    </div>
+                    <div style="font-size: 13px; font-weight: 600; color: var(--neutral-700);">38% Complete</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">Investment Allocation by Engine</h2>
+                <canvas id="enginesChart" style="max-height: 350px;"></canvas>
+            </div>
+        </div>
+    `;
+}
+
+function renderFinancial() {
+    const initiatives = getInitiatives();
+    const totalBudget = initiatives.reduce((sum, i) => sum + i.budget, 0);
+    const totalSpent = totalBudget * 0.42; // Simulated 42% spent
+    const roi = 2.8; // Simulated ROI
+
+    return `
+        <div>
+            <div class="grid grid-4 mb-6">
+                <div class="stat-card">
+                    <div class="stat-card-header">Total Budget</div>
+                    <div class="stat-card-value" style="color: var(--blue-600);">${(totalBudget / 1000000).toFixed(0)}M</div>
+                    <div class="stat-card-footer">SAR allocated</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">Spent to Date</div>
+                    <div class="stat-card-value" style="color: var(--petro-gold-600);">${(totalSpent / 1000000).toFixed(0)}M</div>
+                    <div class="stat-card-footer">42% of budget</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">Expected ROI</div>
+                    <div class="stat-card-value" style="color: var(--petro-green-700);">${roi}x</div>
+                    <div class="stat-card-footer">Return on investment</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">Projected Value</div>
+                    <div class="stat-card-value" style="color: var(--petro-green-700);">${((totalBudget * roi) / 1000000).toFixed(0)}M</div>
+                    <div class="stat-card-footer">SAR expected return</div>
+                </div>
+            </div>
+
+            <div class="grid grid-2 mb-6" style="gap: 24px;">
+                <div class="card">
+                    <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">Budget Utilization</h2>
+                    <canvas id="budgetUtilizationChart" style="max-height: 300px;"></canvas>
+                </div>
+                <div class="card">
+                    <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">ROI by Initiative Tier</h2>
+                    <canvas id="roiChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderBudget() {
+    return `
+        <div>
+            <div class="card mb-6">
+                <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">Budget Variance Analysis</h2>
+                <canvas id="varianceChart" style="max-height: 350px;"></canvas>
+            </div>
+
+            <div class="grid grid-2 mb-6" style="gap: 24px;">
+                <div class="card">
+                    <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">Resource Allocation</h2>
+                    <canvas id="resourceChart" style="max-height: 300px;"></canvas>
+                </div>
+                <div class="card">
+                    <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">Monthly Burn Rate</h2>
+                    <canvas id="burnRateChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderRisk() {
+    const initiatives = getInitiatives();
+    const atRiskCount = initiatives.filter(i => calculateInitiativeStatus(i).status === 'at-risk').length;
+    const criticalPathCount = initiatives.filter(i => i.criticalPath).length;
+
+    return `
+        <div>
+            <div class="grid grid-4 mb-6">
+                <div class="stat-card">
+                    <div class="stat-card-header">High Risk</div>
+                    <div class="stat-card-value" style="color: var(--red-600);">${atRiskCount}</div>
+                    <div class="stat-card-footer">Initiatives at risk</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">Critical Path</div>
+                    <div class="stat-card-value" style="color: var(--petro-gold-600);">${criticalPathCount}</div>
+                    <div class="stat-card-footer">Critical initiatives</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">Budget Risk</div>
+                    <div class="stat-card-value" style="color: var(--red-600);">3</div>
+                    <div class="stat-card-footer">Over budget</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">Schedule Risk</div>
+                    <div class="stat-card-value" style="color: var(--petro-gold-600);">5</div>
+                    <div class="stat-card-footer">Behind schedule</div>
+                </div>
+            </div>
+
+            <div class="card mb-6">
+                <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">Risk Heat Map</h2>
+                <div id="riskHeatMap" style="position: relative; height: 400px; width: 100%;"></div>
+            </div>
+
+            <div class="card">
+                <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">Top Risks</h2>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    ${[
+                        { title: 'Resource Constraints', impact: 'High', probability: 'Medium', tier: '1a' },
+                        { title: 'Technical Complexity', impact: 'High', probability: 'High', tier: '1b' },
+                        { title: 'Vendor Dependencies', impact: 'Medium', probability: 'High', tier: '1c' },
+                        { title: 'Change Management', impact: 'High', probability: 'Medium', tier: '1d' },
+                        { title: 'Budget Overruns', impact: 'Medium', probability: 'Medium', tier: '1a' }
+                    ].map(risk => `
+                        <div style="padding: 16px; border: 1px solid var(--neutral-200); border-radius: 8px; background: white;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                                <strong style="font-weight: 700; color: var(--neutral-900);">${risk.title}</strong>
+                                <span class="badge" style="background: var(--neutral-100); color: var(--neutral-700); padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;">Tier ${risk.tier}</span>
+                            </div>
+                            <div style="display: flex; gap: 16px; font-size: 13px; color: var(--neutral-600);">
+                                <span><strong>Impact:</strong> <span style="color: ${risk.impact === 'High' ? 'var(--red-600)' : 'var(--petro-gold-600)'};">${risk.impact}</span></span>
+                                <span><strong>Probability:</strong> <span style="color: ${risk.probability === 'High' ? 'var(--red-600)' : 'var(--petro-gold-600)'};">${risk.probability}</span></span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderDependencies() {
+    const initiatives = getInitiatives();
+    const withDeps = initiatives.filter(i => i.dependencies && i.dependencies.length > 0);
+
+    return `
+        <div>
+            <div class="grid grid-3 mb-6" style="gap: 24px;">
+                <div class="stat-card">
+                    <div class="stat-card-header">Total Dependencies</div>
+                    <div class="stat-card-value" style="color: var(--blue-600);">${withDeps.reduce((sum, i) => sum + i.dependencies.length, 0)}</div>
+                    <div class="stat-card-footer">Cross-initiative links</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">Critical Dependencies</div>
+                    <div class="stat-card-value" style="color: var(--red-600);">12</div>
+                    <div class="stat-card-footer">High priority links</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">Blocked Items</div>
+                    <div class="stat-card-value" style="color: var(--petro-gold-600);">3</div>
+                    <div class="stat-card-footer">Awaiting dependencies</div>
+                </div>
+            </div>
+
+            <div class="card mb-6">
+                <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">Dependency Network</h2>
+                <div id="dependencyGraph" style="position: relative; height: 450px; width: 100%; background: var(--neutral-50); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--neutral-500);">
+                    <div style="text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">🔗</div>
+                        <div style="font-size: 16px; font-weight: 600;">Dependency Network Visualization</div>
+                        <div style="font-size: 13px; margin-top: 8px;">Interactive graph showing initiative relationships</div>
                     </div>
                 </div>
             </div>
 
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                    <h2 style="font-size: 20px; font-weight: 800; color: var(--neutral-900);">Top Ranked Initiatives</h2>
-                    <a onclick="navigateTo('projects')" style="color: var(--petro-green-700); font-weight: 600; cursor: pointer; font-size: 14px; text-decoration: none;">View All →</a>
-                </div>
-                ${renderProjectsTable(true)}
+                <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--neutral-900);">Critical Dependencies</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Initiative</th>
+                            <th>Depends On</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${withDeps.slice(0, 10).map(init =>
+                            init.dependencies.map(dep => `
+                                <tr>
+                                    <td style="font-weight: 600;">${init.id}</td>
+                                    <td>${dep}</td>
+                                    <td><span class="badge" style="background: var(--blue-100); color: var(--blue-700); padding: 4px 8px; border-radius: 4px; font-size: 11px;">Technical</span></td>
+                                    <td><span class="badge" style="background: var(--petro-green-100); color: var(--petro-green-700); padding: 4px 8px; border-radius: 4px; font-size: 11px;">On Track</span></td>
+                                </tr>
+                            `).join('')
+                        ).join('')}
+                    </tbody>
+                </table>
             </div>
         </div>
     `;
@@ -4408,6 +4751,15 @@ function navigateTo(page) {
     state.currentPage = page;
     render();
     window.scrollTo(0, 0);
+
+    // Initialize dashboard charts after navigation
+    if (page === 'dashboard') {
+        setTimeout(() => {
+            if (typeof initializeDashboardCharts === 'function') {
+                initializeDashboardCharts();
+            }
+        }, 100);
+    }
 }
 
 function logout() {
@@ -4545,6 +4897,404 @@ IRR: ${project.criteriaValues?.irr_percentage || 'N/A'}%
 }
 
 // ============================================================================
+// CHART.JS INITIALIZATION
+// ============================================================================
+
+function initializeDashboardCharts() {
+    const initiatives = getInitiatives();
+
+    // Destroy existing charts before creating new ones
+    Chart.helpers.each(Chart.instances, function(instance) {
+        instance.destroy();
+    });
+
+    // Executive Summary Charts
+    if (state.dashboardPage === 'executive') {
+        // Status Distribution Chart
+        const statusCtx = document.getElementById('statusChart');
+        if (statusCtx) {
+            const statusCounts = {
+                'not-started': 0,
+                'in-progress': 0,
+                'at-risk': 0,
+                'completed': 0
+            };
+            initiatives.forEach(i => {
+                const status = calculateInitiativeStatus(i).status;
+                statusCounts[status]++;
+            });
+
+            new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['In Progress', 'At Risk', 'Completed', 'Not Started'],
+                    datasets: [{
+                        data: [statusCounts['in-progress'], statusCounts['at-risk'], statusCounts['completed'], statusCounts['not-started']],
+                        backgroundColor: ['#2563eb', '#dc2626', '#059669', '#6b7280'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 15, font: { size: 12, weight: '600' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Budget by Tier Chart
+        const budgetCtx = document.getElementById('budgetChart');
+        if (budgetCtx) {
+            const tierBudgets = {};
+            initiatives.forEach(i => {
+                if (!tierBudgets[i.tier]) tierBudgets[i.tier] = 0;
+                tierBudgets[i.tier] += i.budget;
+            });
+
+            new Chart(budgetCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(tierBudgets),
+                    datasets: [{
+                        label: 'Budget (SAR)',
+                        data: Object.values(tierBudgets).map(v => v / 1000000),
+                        backgroundColor: '#0d5530',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: (value) => value + 'M' }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // Portfolio & Delivery Charts
+    if (state.dashboardPage === 'portfolio') {
+        // Delivery Timeline Chart
+        const deliveryCtx = document.getElementById('deliveryChart');
+        if (deliveryCtx) {
+            const monthlyData = {};
+            initiatives.forEach(i => {
+                const endMonth = i.end;
+                if (!monthlyData[endMonth]) monthlyData[endMonth] = 0;
+                monthlyData[endMonth]++;
+            });
+
+            const sortedMonths = Object.keys(monthlyData).sort();
+            new Chart(deliveryCtx, {
+                type: 'line',
+                data: {
+                    labels: sortedMonths,
+                    datasets: [{
+                        label: 'Initiatives Delivered',
+                        data: sortedMonths.map(m => monthlyData[m]),
+                        borderColor: '#0d5530',
+                        backgroundColor: 'rgba(13, 85, 48, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // Tier Distribution Chart
+        const tierCtx = document.getElementById('tierChart');
+        if (tierCtx) {
+            const tierCounts = {};
+            initiatives.forEach(i => {
+                if (!tierCounts[i.tier]) tierCounts[i.tier] = 0;
+                tierCounts[i.tier]++;
+            });
+
+            new Chart(tierCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(tierCounts),
+                    datasets: [{
+                        data: Object.values(tierCounts),
+                        backgroundColor: ['#0d5530', '#2563eb', '#d97706', '#dc2626', '#6b7280'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 15, font: { size: 12, weight: '600' } }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // BCG Maturity Chart
+    if (state.dashboardPage === 'maturity') {
+        const maturityCtx = document.getElementById('maturityRadar');
+        if (maturityCtx) {
+            new Chart(maturityCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Strategy', 'Technology', 'People', 'Processes', 'Data', 'Culture'],
+                    datasets: [{
+                        label: 'Current Maturity',
+                        data: [3.8, 3.5, 3.2, 3.6, 3.4, 3.1],
+                        borderColor: '#0d5530',
+                        backgroundColor: 'rgba(13, 85, 48, 0.2)',
+                        pointBackgroundColor: '#0d5530',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#0d5530'
+                    }, {
+                        label: 'Target Maturity',
+                        data: [4.5, 4.5, 4.0, 4.3, 4.2, 4.0],
+                        borderColor: '#d97706',
+                        backgroundColor: 'rgba(217, 119, 6, 0.1)',
+                        pointBackgroundColor: '#d97706',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#d97706'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 5,
+                            ticks: { stepSize: 1 }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 15, font: { size: 12, weight: '600' } }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // Three Engines Chart
+    if (state.dashboardPage === 'engines') {
+        const enginesCtx = document.getElementById('enginesChart');
+        if (enginesCtx) {
+            new Chart(enginesCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Run', 'Grow', 'Transform'],
+                    datasets: [{
+                        label: 'Investment (SAR M)',
+                        data: [850, 620, 380],
+                        backgroundColor: ['#0d5530', '#2563eb', '#d97706'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: (value) => value + 'M' }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // Financial Charts
+    if (state.dashboardPage === 'financial') {
+        const totalBudget = initiatives.reduce((sum, i) => sum + i.budget, 0);
+        const totalSpent = totalBudget * 0.42;
+
+        // Budget Utilization Chart
+        const utilizationCtx = document.getElementById('budgetUtilizationChart');
+        if (utilizationCtx) {
+            new Chart(utilizationCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Spent', 'Remaining'],
+                    datasets: [{
+                        data: [totalSpent / 1000000, (totalBudget - totalSpent) / 1000000],
+                        backgroundColor: ['#d97706', '#e5e7eb'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 15, font: { size: 12, weight: '600' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ROI Chart
+        const roiCtx = document.getElementById('roiChart');
+        if (roiCtx) {
+            new Chart(roiCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Tier 1a', 'Tier 1b', 'Tier 1c', 'Tier 1d', 'Contingent'],
+                    datasets: [{
+                        label: 'Expected ROI',
+                        data: [3.2, 2.8, 2.5, 2.1, 1.8],
+                        backgroundColor: '#059669',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: (value) => value + 'x' }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // Budget & Resources Charts
+    if (state.dashboardPage === 'budget') {
+        // Budget Variance Chart
+        const varianceCtx = document.getElementById('varianceChart');
+        if (varianceCtx) {
+            new Chart(varianceCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+                    datasets: [{
+                        label: 'Planned',
+                        data: [450, 480, 520, 400],
+                        backgroundColor: '#2563eb'
+                    }, {
+                        label: 'Actual',
+                        data: [470, 465, 495, 380],
+                        backgroundColor: '#d97706'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 15, font: { size: 12, weight: '600' } }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: (value) => value + 'M' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Resource Allocation Chart
+        const resourceCtx = document.getElementById('resourceChart');
+        if (resourceCtx) {
+            new Chart(resourceCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Engineering', 'Operations', 'Marketing', 'Sales', 'Support'],
+                    datasets: [{
+                        data: [35, 25, 15, 15, 10],
+                        backgroundColor: ['#0d5530', '#2563eb', '#d97706', '#dc2626', '#6b7280'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 15, font: { size: 12, weight: '600' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Burn Rate Chart
+        const burnRateCtx = document.getElementById('burnRateChart');
+        if (burnRateCtx) {
+            new Chart(burnRateCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Monthly Spend (SAR M)',
+                        data: [120, 135, 142, 155, 148, 162, 158, 165, 170, 155, 145, 135],
+                        borderColor: '#dc2626',
+                        backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: (value) => value + 'M' }
+                        }
+                    }
+                }
+            });
+        }
+    }
+}
+
+// ============================================================================
 // INITIALIZE
 // ============================================================================
 
@@ -4567,6 +5317,13 @@ window.wizardPrev = wizardPrev;
 window.submitWizard = submitWizard;
 window.runPrioritization = runPrioritization;
 window.viewProject = viewProject;
+window.navigateToDashboardPage = navigateToDashboardPage;
+window.initializeDashboardCharts = initializeDashboardCharts;
+
+// Initialize charts if on dashboard page
+if (state.currentPage === 'dashboard') {
+    setTimeout(() => initializeDashboardCharts(), 100);
+}
 
 </script>
 </body>
