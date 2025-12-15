@@ -1309,6 +1309,40 @@ class DataStore {
         }
         this.saveData();
     }
+
+    saveTemplate(template) {
+        const existingIndex = this.data.templates.findIndex(t => t.id === template.id);
+
+        if (existingIndex >= 0) {
+            // Update existing template
+            this.data.templates[existingIndex] = template;
+            this.addAuditEvent({
+                type: 'template_updated',
+                user: state.currentUserName,
+                description: `Updated template: ${template.name}`
+            });
+        } else {
+            // Add new template
+            this.data.templates.push(template);
+            this.addAuditEvent({
+                type: 'template_created',
+                user: state.currentUserName,
+                description: `Created template: ${template.name}`
+            });
+        }
+
+        this.saveData();
+    }
+
+    deleteTemplate(templateId) {
+        this.data.templates = this.data.templates.filter(t => t.id !== templateId);
+        this.addAuditEvent({
+            type: 'template_deleted',
+            user: state.currentUserName,
+            description: `Deleted template ID: ${templateId}`
+        });
+        this.saveData();
+    }
 }
 
 // ============================================================================
@@ -1526,7 +1560,13 @@ const state = {
     wizardStep: 1,
     wizardData: { criteriaValues: {} },
     showDescriptionBox: true,
-    store: new DataStore()
+    store: new DataStore(),
+    // Template Builder State
+    templateBuilderMode: null, // null, 'create', 'edit'
+    editingTemplate: null,
+    showFieldEditor: false,
+    editingField: null,
+    editingFieldIndex: null
 };
 
 // ============================================================================
@@ -1917,7 +1957,449 @@ function renderProjects() {
     `;
 }
 
+// ============================================================================
+// TEMPLATE BUILDER FUNCTIONS
+// ============================================================================
+
+function startCreateTemplate() {
+    state.templateBuilderMode = 'create';
+    state.editingTemplate = {
+        id: 'template-' + Date.now(),
+        name: '',
+        fields: [],
+        is_published: true,
+        created_at: new Date().toISOString()
+    };
+    render();
+}
+
+function startEditTemplate(templateId) {
+    const data = state.store.getData();
+    const template = data.templates.find(t => t.id === templateId);
+    if (template) {
+        state.templateBuilderMode = 'edit';
+        state.editingTemplate = JSON.parse(JSON.stringify(template)); // Deep copy
+        render();
+    }
+}
+
+function duplicateTemplate(templateId) {
+    const data = state.store.getData();
+    const template = data.templates.find(t => t.id === templateId);
+    if (template) {
+        state.templateBuilderMode = 'create';
+        state.editingTemplate = {
+            ...JSON.parse(JSON.stringify(template)),
+            id: 'template-' + Date.now(),
+            name: template.name + ' (Copy)',
+            created_at: new Date().toISOString()
+        };
+        render();
+    }
+}
+
+function cancelTemplateBuilder() {
+    state.templateBuilderMode = null;
+    state.editingTemplate = null;
+    state.showFieldEditor = false;
+    state.editingField = null;
+    state.editingFieldIndex = null;
+    render();
+}
+
+function saveTemplateFromBuilder() {
+    const template = state.editingTemplate;
+
+    if (!template.name.trim()) {
+        alert('Template name is required');
+        return;
+    }
+
+    if (template.fields.length === 0) {
+        alert('Add at least one field');
+        return;
+    }
+
+    const scoringFields = template.fields.filter(f => f.is_scoring);
+    const totalWeight = scoringFields.reduce((sum, f) => sum + f.weight, 0);
+
+    if (totalWeight !== 100) {
+        alert(`Scoring weight total must equal 100% (currently ${totalWeight}%)`);
+        return;
+    }
+
+    state.store.saveTemplate(template);
+    cancelTemplateBuilder();
+}
+
+function openFieldEditor(fieldIndex = null) {
+    if (fieldIndex !== null) {
+        state.editingField = JSON.parse(JSON.stringify(state.editingTemplate.fields[fieldIndex]));
+        state.editingFieldIndex = fieldIndex;
+    } else {
+        state.editingField = {
+            id: 'field-' + Date.now(),
+            type: 'text',
+            label: '',
+            key: '',
+            required: false,
+            is_scoring: false,
+            weight: 0,
+            threshold: null,
+            category: '',
+            config: {}
+        };
+        state.editingFieldIndex = null;
+    }
+    state.showFieldEditor = true;
+    render();
+}
+
+function closeFieldEditor() {
+    state.showFieldEditor = false;
+    state.editingField = null;
+    state.editingFieldIndex = null;
+    render();
+}
+
+function saveField() {
+    const field = state.editingField;
+
+    if (!field.label.trim() || !field.key.trim()) {
+        alert('Label and Key are required');
+        return;
+    }
+
+    // Validate dropdown options
+    if (field.type === 'dropdown') {
+        const validOptions = field.config.options.filter(o => o.value && o.label);
+        if (validOptions.length === 0) {
+            alert('Add at least one dropdown option');
+            return;
+        }
+        field.config.options = validOptions;
+    }
+
+    // Set config for number/currency fields
+    if (field.type === 'number' || field.type === 'currency') {
+        field.config = {
+            min: Number(field.config.min) || 0,
+            max: Number(field.config.max) || 100
+        };
+    }
+
+    // Ensure weight is 0 if not scoring
+    if (!field.is_scoring) {
+        field.weight = 0;
+    }
+
+    if (state.editingFieldIndex !== null) {
+        // Update existing field
+        state.editingTemplate.fields[state.editingFieldIndex] = field;
+    } else {
+        // Add new field
+        state.editingTemplate.fields.push(field);
+    }
+
+    closeFieldEditor();
+}
+
+function removeField(fieldIndex) {
+    if (confirm('Remove this field?')) {
+        state.editingTemplate.fields.splice(fieldIndex, 1);
+        render();
+    }
+}
+
+function moveField(fieldIndex, direction) {
+    const fields = state.editingTemplate.fields;
+    const newIndex = direction === 'up' ? fieldIndex - 1 : fieldIndex + 1;
+
+    if (newIndex >= 0 && newIndex < fields.length) {
+        [fields[fieldIndex], fields[newIndex]] = [fields[newIndex], fields[fieldIndex]];
+        render();
+    }
+}
+
+function updateFieldEditorProperty(property, value) {
+    if (property.includes('.')) {
+        const [parent, child] = property.split('.');
+        if (!state.editingField[parent]) {
+            state.editingField[parent] = {};
+        }
+        state.editingField[parent][child] = value;
+    } else {
+        state.editingField[property] = value;
+    }
+
+    // Auto-generate key from label
+    if (property === 'label') {
+        state.editingField.key = value.toLowerCase()
+            .replace(/^\d+\.\s*/, '') // Remove numbering
+            .replace(/\s+/g, '_')
+            .replace(/[^a-z0-9_]/g, '');
+    }
+
+    render();
+}
+
+function addDropdownOption() {
+    if (!state.editingField.config.options) {
+        state.editingField.config.options = [];
+    }
+    state.editingField.config.options.push({ value: '', label: '', points: 0 });
+    render();
+}
+
+function removeDropdownOption(index) {
+    state.editingField.config.options.splice(index, 1);
+    render();
+}
+
+function updateDropdownOption(index, property, value) {
+    state.editingField.config.options[index][property] = value;
+    render();
+}
+
+function renderFieldEditorModal() {
+    const field = state.editingField;
+    if (!field) return '';
+
+    const isEditing = state.editingFieldIndex !== null;
+
+    return `
+        <div class="modal" style="display: flex;">
+            <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+                <div class="modal-header">
+                    <h2>${isEditing ? 'Edit Field' : 'Add Field'}</h2>
+                    <button class="modal-close" onclick="closeFieldEditor()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div style="margin-bottom: 24px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--neutral-700);">Field Type</label>
+                        <select class="input" onchange="updateFieldEditorProperty('type', this.value)">
+                            <option value="text" ${field.type === 'text' ? 'selected' : ''}>Text</option>
+                            <option value="number" ${field.type === 'number' ? 'selected' : ''}>Number</option>
+                            <option value="currency" ${field.type === 'currency' ? 'selected' : ''}>Currency (SAR)</option>
+                            <option value="dropdown" ${field.type === 'dropdown' ? 'selected' : ''}>Dropdown</option>
+                            <option value="date" ${field.type === 'date' ? 'selected' : ''}>Date</option>
+                            <option value="yesno" ${field.type === 'yesno' ? 'selected' : ''}>Yes/No</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 24px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--neutral-700);">Label (Display Name)</label>
+                        <input type="text" class="input" value="${field.label}"
+                               oninput="updateFieldEditorProperty('label', this.value)"
+                               placeholder="e.g., 7. Strategic Priority">
+                    </div>
+
+                    <div style="margin-bottom: 24px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--neutral-700);">Key (Internal Identifier - no spaces)</label>
+                        <input type="text" class="input" value="${field.key}"
+                               oninput="updateFieldEditorProperty('key', this.value.toLowerCase().replace(/\\s+/g, '_'))"
+                               placeholder="e.g., strategic_priority">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" ${field.required ? 'checked' : ''}
+                                   onchange="updateFieldEditorProperty('required', this.checked)">
+                            <span style="font-weight: 700; color: var(--neutral-700);">Required field</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" ${field.is_scoring ? 'checked' : ''}
+                                   onchange="updateFieldEditorProperty('is_scoring', this.checked)">
+                            <span style="font-weight: 700; color: var(--neutral-700);">Use for scoring</span>
+                        </label>
+                    </div>
+
+                    ${field.is_scoring ? `
+                        <div style="background: var(--petro-green-50); border: 2px solid var(--petro-green-200); border-radius: 10px; padding: 20px; margin-bottom: 24px;">
+                            <h3 style="font-weight: 700; color: var(--petro-green-900); margin-bottom: 16px;">Scoring Configuration</h3>
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--neutral-700);">Weight (%)</label>
+                                <input type="number" class="input" value="${field.weight}"
+                                       oninput="updateFieldEditorProperty('weight', Number(this.value))"
+                                       placeholder="e.g., 25" min="0" max="100">
+                            </div>
+
+                            ${(field.type === 'number' || field.type === 'currency') ? `
+                                <div style="margin-bottom: 16px;">
+                                    <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--neutral-700);">Threshold (Optional - for pass/fail scoring)</label>
+                                    <input type="number" class="input" value="${field.threshold || ''}"
+                                           oninput="updateFieldEditorProperty('threshold', this.value ? Number(this.value) : null)"
+                                           placeholder="e.g., 15 (for IRR >= 15%)">
+                                </div>
+                                <div style="font-size: 12px; color: var(--petro-green-700); padding: 12px; background: white; border-radius: 6px;">
+                                    ${field.threshold !== null && field.threshold !== undefined && field.threshold !== '' ? `
+                                        <strong>Threshold Mode:</strong> Value ≥ ${field.threshold} = 100 points, below = 0 points
+                                    ` : `
+                                        <strong>Normalization Mode:</strong> Value normalized to 0-100 scale based on min/max
+                                    `}
+                                </div>
+                            ` : ''}
+                        </div>
+                    ` : ''}
+
+                    ${(field.type === 'number' || field.type === 'currency') ? `
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--neutral-700);">Min Value</label>
+                                <input type="number" class="input" value="${field.config.min || 0}"
+                                       oninput="updateFieldEditorProperty('config.min', Number(this.value))">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--neutral-700);">Max Value</label>
+                                <input type="number" class="input" value="${field.config.max || 100}"
+                                       oninput="updateFieldEditorProperty('config.max', Number(this.value))">
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${field.type === 'dropdown' ? `
+                        <div style="margin-bottom: 24px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--neutral-700);">
+                                Dropdown Options ${field.is_scoring ? '(with point values)' : ''}
+                            </label>
+                            <div style="max-height: 300px; overflow-y: auto; margin-bottom: 12px; padding: 12px; background: var(--neutral-50); border-radius: 8px;">
+                                ${(field.config.options || []).map((opt, idx) => `
+                                    <div style="display: grid; grid-template-columns: ${field.is_scoring ? '2fr 3fr 1fr 40px' : '2fr 3fr 40px'}; gap: 8px; margin-bottom: 8px;">
+                                        <input type="text" class="input" placeholder="value" value="${opt.value}"
+                                               oninput="updateDropdownOption(${idx}, 'value', this.value)">
+                                        <input type="text" class="input" placeholder="Label" value="${opt.label}"
+                                               oninput="updateDropdownOption(${idx}, 'label', this.value)">
+                                        ${field.is_scoring ? `
+                                            <input type="number" class="input" placeholder="Points" value="${opt.points}"
+                                                   oninput="updateDropdownOption(${idx}, 'points', Number(this.value))">
+                                        ` : ''}
+                                        <button class="btn btn-danger btn-sm" onclick="removeDropdownOption(${idx})"
+                                                style="height: 40px;">×</button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="addDropdownOption()">+ Add Option</button>
+                        </div>
+                    ` : ''}
+
+                    <div style="display: flex; gap: 12px; margin-top: 24px;">
+                        <button class="btn btn-secondary" onclick="closeFieldEditor()">Cancel</button>
+                        <button class="btn btn-primary" onclick="saveField()" style="flex: 1;">
+                            ${isEditing ? 'Update Field' : 'Add Field'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderTemplateBuilder() {
+    const template = state.editingTemplate;
+    const scoringFields = template.fields.filter(f => f.is_scoring);
+    const totalWeight = scoringFields.reduce((sum, f) => sum + f.weight, 0);
+
+    return `
+        <div class="container" style="padding: 40px 32px;">
+            <div style="margin-bottom: 32px;">
+                <h1 style="font-size: 32px; margin-bottom: 8px; font-weight: 800;">
+                    ${state.templateBuilderMode === 'edit' ? 'Edit Template' : 'Create Template'}
+                </h1>
+                <p style="color: var(--neutral-600); font-size: 15px;">Configure initiative criteria and scoring weights</p>
+            </div>
+
+            <div class="card" style="margin-bottom: 24px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 700; color: var(--neutral-700);">Template Name</label>
+                <input type="text" class="input" value="${template.name}"
+                       oninput="state.editingTemplate.name = this.value; render();"
+                       placeholder="e.g., Petrolube Initiative Dossier - 35 Criteria V15">
+            </div>
+
+            <div class="card" style="margin-bottom: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <div>
+                        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 4px;">Fields Configuration</h2>
+                        <p style="font-size: 14px; color: var(--neutral-600);">
+                            ${template.fields.length} total fields • ${scoringFields.length} scoring fields
+                        </p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 12px; color: var(--neutral-600); margin-bottom: 4px;">Scoring Weight Total:</div>
+                        <div style="font-size: 32px; font-weight: 800; color: ${totalWeight === 100 ? 'var(--petro-green-700)' : 'var(--red-600)'};">
+                            ${totalWeight}%
+                        </div>
+                        ${totalWeight !== 100 ? '<div style="font-size: 11px; color: var(--red-600); margin-top: 4px;">Must equal 100%</div>' : ''}
+                    </div>
+                </div>
+
+                ${template.fields.length === 0 ? `
+                    <div style="text-align: center; padding: 60px 20px; color: var(--neutral-500);">
+                        No fields added yet. Click "Add Field" to get started.
+                    </div>
+                ` : `
+                    <div style="max-height: 500px; overflow-y: auto; margin-bottom: 20px;">
+                        ${template.fields.map((field, index) => `
+                            <div style="border: 1px solid var(--neutral-200); border-radius: 8px; padding: 16px; margin-bottom: 12px; background: white;">
+                                <div style="display: flex; gap: 16px;">
+                                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                                        <button class="btn btn-secondary btn-sm" onclick="moveField(${index}, 'up')"
+                                                ${index === 0 ? 'disabled' : ''}
+                                                style="padding: 4px 8px; font-size: 12px;">▲</button>
+                                        <button class="btn btn-secondary btn-sm" onclick="moveField(${index}, 'down')"
+                                                ${index === template.fields.length - 1 ? 'disabled' : ''}
+                                                style="padding: 4px 8px; font-size: 12px;">▼</button>
+                                    </div>
+
+                                    <div style="flex: 1;">
+                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                            <span style="font-size: 12px; font-family: monospace; color: var(--neutral-400);">#${index + 1}</span>
+                                            <span style="font-size: 16px; font-weight: 800; color: var(--neutral-900);">${field.label}</span>
+                                            ${field.required ? '<span class="badge badge-red">Required</span>' : ''}
+                                            ${field.is_scoring ? `<span class="badge badge-orange">Scoring: ${field.weight}%</span>` : ''}
+                                        </div>
+                                        <div style="font-size: 13px; color: var(--neutral-600);">
+                                            <span style="font-weight: 600;">Type:</span> <code style="background: var(--neutral-100); padding: 2px 6px; border-radius: 4px;">${field.type}</code>
+                                            <span style="margin-left: 12px; font-weight: 600;">Key:</span> <code style="background: var(--neutral-100); padding: 2px 6px; border-radius: 4px;">${field.key}</code>
+                                            ${field.threshold !== null && field.threshold !== undefined && field.threshold !== '' ?
+                                                `<span style="margin-left: 12px; font-weight: 600;">Threshold: <strong>${field.threshold}</strong></span>` : ''}
+                                        </div>
+                                        ${field.type === 'dropdown' && field.config.options ? `
+                                            <div style="margin-top: 8px; font-size: 11px; color: var(--neutral-500);">
+                                                Options: ${field.config.options.map(o => o.label).join(', ')}
+                                            </div>
+                                        ` : ''}
+                                    </div>
+
+                                    <div style="display: flex; gap: 8px;">
+                                        <button class="btn btn-secondary btn-sm" onclick="openFieldEditor(${index})">Edit</button>
+                                        <button class="btn btn-danger btn-sm" onclick="removeField(${index})">Remove</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `}
+
+                <button class="btn btn-secondary" onclick="openFieldEditor()" style="width: 100%;">+ Add Field</button>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+                <button class="btn btn-secondary" onclick="cancelTemplateBuilder()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveTemplateFromBuilder()" style="flex: 1;"
+                        ${totalWeight !== 100 ? 'disabled' : ''}>
+                    ${totalWeight === 100 ? 'Publish Template' : `Fix Weight Total (${totalWeight}% ≠ 100%)`}
+                </button>
+            </div>
+        </div>
+    `;
+}
+
 function renderTemplates() {
+    // If in builder mode, show builder
+    if (state.templateBuilderMode) {
+        return renderTemplateBuilder();
+    }
+
     const data = state.store.getData();
     
     return `
@@ -1927,45 +2409,69 @@ function renderTemplates() {
                     <h1 style="font-size: 32px; margin-bottom: 8px; font-weight: 800;">Assessment Templates</h1>
                     <p style="color: var(--neutral-600); font-size: 15px;">Manage evaluation frameworks and scoring criteria</p>
                 </div>
+                <button class="btn btn-primary" onclick="startCreateTemplate()">+ Create New Template</button>
             </div>
-            
-            <div class="grid grid-2">
-                ${data.templates.map(template => {
-                    const scoringFields = template.fields.filter(f => f.is_scoring);
-                    const totalWeight = scoringFields.reduce((sum, f) => sum + f.weight, 0);
-                    
-                    return `
-                        <div class="card">
-                            <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 20px;">
-                                <h3 style="flex: 1; font-size: 18px; font-weight: 800; color: var(--neutral-900);">${template.name}</h3>
-                                <span class="badge badge-green">Published</span>
+
+            ${data.templates.length === 0 ? `
+                <div class="card" style="padding: 80px 40px; text-align: center;">
+                    <div style="font-size: 64px; margin-bottom: 20px; opacity: 0.3;">📝</div>
+                    <p style="color: var(--neutral-600); margin-bottom: 24px; font-size: 16px;">No templates yet</p>
+                    <button class="btn btn-primary" onclick="startCreateTemplate()">Create Your First Template</button>
+                </div>
+            ` : `
+                <div class="grid grid-2">
+                    ${data.templates.map(template => {
+                        const scoringFields = template.fields.filter(f => f.is_scoring);
+                        const totalWeight = scoringFields.reduce((sum, f) => sum + f.weight, 0);
+
+                        return `
+                            <div class="card">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px;">
+                                    <div style="flex: 1;">
+                                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                            <h3 style="font-size: 18px; font-weight: 800; color: var(--neutral-900);">${template.name}</h3>
+                                            ${template.is_published ? '<span class="badge badge-green">Published</span>' : ''}
+                                        </div>
+                                        <div style="font-size: 13px; color: var(--neutral-600);">
+                                            ${template.fields.length} total fields • ${scoringFields.length} scoring fields • Weight total:
+                                            <span style="font-weight: 700; color: ${totalWeight === 100 ? 'var(--petro-green-700)' : 'var(--red-600)'};">
+                                                ${totalWeight}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px;">
+                                    <div>
+                                        <div style="font-size: 11px; color: var(--neutral-600); margin-bottom: 4px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Total Fields</div>
+                                        <div style="font-size: 28px; font-weight: 800; color: var(--neutral-900);">${template.fields.length}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 11px; color: var(--neutral-600); margin-bottom: 4px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Scoring</div>
+                                        <div style="font-size: 28px; font-weight: 800; color: var(--petro-green-700);">${scoringFields.length}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 11px; color: var(--neutral-600); margin-bottom: 4px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Weight Total</div>
+                                        <div style="font-size: 28px; font-weight: 800; color: ${totalWeight === 100 ? 'var(--petro-green-700)' : 'var(--red-600)'};">${totalWeight}%</div>
+                                    </div>
+                                </div>
+                                <div style="padding: 16px; background: var(--neutral-50); border-radius: 10px; margin-bottom: 20px;">
+                                    <div style="font-size: 12px; font-weight: 700; color: var(--neutral-700); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Scoring Criteria Preview</div>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                        ${scoringFields.slice(0, 5).map(f => `
+                                            <span class="badge badge-orange">${f.label.split('.')[1]?.trim() || f.label}: ${f.weight}%</span>
+                                        `).join('')}
+                                        ${scoringFields.length > 5 ? `<span style="font-size: 12px; color: var(--neutral-500);">+${scoringFields.length - 5} more</span>` : ''}
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="btn btn-primary btn-sm" onclick="startEditTemplate('${template.id}')" style="flex: 1;">Edit</button>
+                                    <button class="btn btn-secondary btn-sm" onclick="duplicateTemplate('${template.id}')">Duplicate</button>
+                                </div>
                             </div>
-                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px;">
-                                <div>
-                                    <div style="font-size: 11px; color: var(--neutral-600); margin-bottom: 4px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Total Fields</div>
-                                    <div style="font-size: 28px; font-weight: 800; color: var(--neutral-900);">${template.fields.length}</div>
-                                </div>
-                                <div>
-                                    <div style="font-size: 11px; color: var(--neutral-600); margin-bottom: 4px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Scoring</div>
-                                    <div style="font-size: 28px; font-weight: 800; color: var(--petro-green-700);">${scoringFields.length}</div>
-                                </div>
-                                <div>
-                                    <div style="font-size: 11px; color: var(--neutral-600); margin-bottom: 4px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Weight Total</div>
-                                    <div style="font-size: 28px; font-weight: 800; color: ${totalWeight === 100 ? 'var(--petro-green-700)' : 'var(--red-600)'};">${totalWeight}%</div>
-                                </div>
-                            </div>
-                            <div style="padding: 16px; background: var(--neutral-50); border-radius: 10px; margin-bottom: 20px;">
-                                <div style="font-size: 12px; font-weight: 700; color: var(--neutral-700); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Scoring Criteria</div>
-                                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                                    ${scoringFields.slice(0, 6).map(f => `
-                                        <span class="badge badge-orange">${f.label.split('.')[1]?.trim() || f.label}: ${f.weight}%</span>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `}
         </div>
     `;
 }
@@ -2139,6 +2645,8 @@ function renderModals() {
                 <div class="modal-body" id="wizardContent"></div>
             </div>
         </div>
+
+        ${state.showFieldEditor ? renderFieldEditorModal() : ''}
     `;
 }
 
