@@ -2171,6 +2171,37 @@ function deleteDocument(docId) {
 
 function renderAdmin() {
     const data = state.store.getData();
+
+    // Ensure adminSettings exists with full structure
+    if (!data.adminSettings) {
+        data.adminSettings = {
+            companyProfile: {
+                companyName: 'Petrolube',
+                companyFullName: 'Petrolube Company',
+                industry: 'Lubricants & Petroleum Products',
+                headquarters: 'Riyadh, Saudi Arabia',
+                founded: '1985',
+                employees: '500+',
+                description: 'Leading lubricants manufacturer in the Middle East',
+                vision: 'To be the most trusted lubricants brand in the region',
+                mission: 'Delivering premium quality lubricants that exceed customer expectations'
+            },
+            coCompanies: [],
+            businessInfo: {
+                taxId: 'SAT-300123456789',
+                registrationNumber: 'CR-1234567890',
+                fiscalYearStart: 'January',
+                currency: 'SAR',
+                timezone: 'Asia/Riyadh',
+                website: 'www.petrolube.com',
+                contactEmail: 'info@petrolube.com',
+                contactPhone: '+966 11 234 5678'
+            },
+            documents: []
+        };
+        state.store.saveData();
+    }
+
     const admin = data.adminSettings;
 
     if (state.adminEditMode === 'company') {
