@@ -2462,12 +2462,20 @@ function renderDashboardPage() {
 // DASHBOARD SUB-PAGES
 // ============================================================================
 
+function getInitiatives() {
+    // Return all initiatives data with status and progress calculated
+    return INITIATIVES_DATA.map(init => ({
+        ...init,
+        ...calculateInitiativeStatus(init)
+    }));
+}
+
 function renderExecutiveSummary() {
     const initiatives = getInitiatives();
     const totalBudget = initiatives.reduce((sum, i) => sum + i.budget, 0);
-    const completedCount = initiatives.filter(i => calculateInitiativeStatus(i).status === 'completed').length;
-    const atRiskCount = initiatives.filter(i => calculateInitiativeStatus(i).status === 'at-risk').length;
-    const avgProgress = initiatives.reduce((sum, i) => sum + calculateInitiativeStatus(i).progress, 0) / initiatives.length;
+    const completedCount = initiatives.filter(i => i.status === 'completed').length;
+    const atRiskCount = initiatives.filter(i => i.status === 'at-risk').length;
+    const avgProgress = initiatives.reduce((sum, i) => sum + i.progress, 0) / initiatives.length;
 
     return `
         <div>
@@ -2691,7 +2699,7 @@ function renderBudget() {
 
 function renderRisk() {
     const initiatives = getInitiatives();
-    const atRiskCount = initiatives.filter(i => calculateInitiativeStatus(i).status === 'at-risk').length;
+    const atRiskCount = initiatives.filter(i => i.status === 'at-risk').length;
     const criticalPathCount = initiatives.filter(i => i.criticalPath).length;
 
     return `
@@ -4900,12 +4908,20 @@ IRR: ${project.criteriaValues?.irr_percentage || 'N/A'}%
 // CHART.JS INITIALIZATION
 // ============================================================================
 
+// Store chart instances globally
+if (!window.chartInstances) {
+    window.chartInstances = {};
+}
+
 function initializeDashboardCharts() {
     const initiatives = getInitiatives();
 
     // Destroy existing charts before creating new ones
-    Chart.helpers.each(Chart.instances, function(instance) {
-        instance.destroy();
+    Object.keys(window.chartInstances).forEach(key => {
+        if (window.chartInstances[key]) {
+            window.chartInstances[key].destroy();
+            delete window.chartInstances[key];
+        }
     });
 
     // Executive Summary Charts
@@ -4920,11 +4936,10 @@ function initializeDashboardCharts() {
                 'completed': 0
             };
             initiatives.forEach(i => {
-                const status = calculateInitiativeStatus(i).status;
-                statusCounts[status]++;
+                statusCounts[i.status]++;
             });
 
-            new Chart(statusCtx, {
+            window.chartInstances.statusChart = new Chart(statusCtx, {
                 type: 'doughnut',
                 data: {
                     labels: ['In Progress', 'At Risk', 'Completed', 'Not Started'],
@@ -4956,7 +4971,7 @@ function initializeDashboardCharts() {
                 tierBudgets[i.tier] += i.budget;
             });
 
-            new Chart(budgetCtx, {
+            window.chartInstances.budgetChart = new Chart(budgetCtx, {
                 type: 'bar',
                 data: {
                     labels: Object.keys(tierBudgets),
@@ -4997,7 +5012,7 @@ function initializeDashboardCharts() {
             });
 
             const sortedMonths = Object.keys(monthlyData).sort();
-            new Chart(deliveryCtx, {
+            window.chartInstances.deliveryChart = new Chart(deliveryCtx, {
                 type: 'line',
                 data: {
                     labels: sortedMonths,
@@ -5029,7 +5044,7 @@ function initializeDashboardCharts() {
                 tierCounts[i.tier]++;
             });
 
-            new Chart(tierCtx, {
+            window.chartInstances.tierChart = new Chart(tierCtx, {
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(tierCounts),
@@ -5057,7 +5072,7 @@ function initializeDashboardCharts() {
     if (state.dashboardPage === 'maturity') {
         const maturityCtx = document.getElementById('maturityRadar');
         if (maturityCtx) {
-            new Chart(maturityCtx, {
+            window.chartInstances.maturityChart = new Chart(maturityCtx, {
                 type: 'radar',
                 data: {
                     labels: ['Strategy', 'Technology', 'People', 'Processes', 'Data', 'Culture'],
@@ -5106,7 +5121,7 @@ function initializeDashboardCharts() {
     if (state.dashboardPage === 'engines') {
         const enginesCtx = document.getElementById('enginesChart');
         if (enginesCtx) {
-            new Chart(enginesCtx, {
+            window.chartInstances.enginesChart = new Chart(enginesCtx, {
                 type: 'bar',
                 data: {
                     labels: ['Run', 'Grow', 'Transform'],
@@ -5142,7 +5157,7 @@ function initializeDashboardCharts() {
         // Budget Utilization Chart
         const utilizationCtx = document.getElementById('budgetUtilizationChart');
         if (utilizationCtx) {
-            new Chart(utilizationCtx, {
+            window.chartInstances.utilizationChart = new Chart(utilizationCtx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Spent', 'Remaining'],
@@ -5168,7 +5183,7 @@ function initializeDashboardCharts() {
         // ROI Chart
         const roiCtx = document.getElementById('roiChart');
         if (roiCtx) {
-            new Chart(roiCtx, {
+            window.chartInstances.roiChart = new Chart(roiCtx, {
                 type: 'bar',
                 data: {
                     labels: ['Tier 1a', 'Tier 1b', 'Tier 1c', 'Tier 1d', 'Contingent'],
@@ -5201,7 +5216,7 @@ function initializeDashboardCharts() {
         // Budget Variance Chart
         const varianceCtx = document.getElementById('varianceChart');
         if (varianceCtx) {
-            new Chart(varianceCtx, {
+            window.chartInstances.varianceChart = new Chart(varianceCtx, {
                 type: 'bar',
                 data: {
                     labels: ['Q1', 'Q2', 'Q3', 'Q4'],
@@ -5237,7 +5252,7 @@ function initializeDashboardCharts() {
         // Resource Allocation Chart
         const resourceCtx = document.getElementById('resourceChart');
         if (resourceCtx) {
-            new Chart(resourceCtx, {
+            window.chartInstances.resourceChart = new Chart(resourceCtx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Engineering', 'Operations', 'Marketing', 'Sales', 'Support'],
@@ -5263,7 +5278,7 @@ function initializeDashboardCharts() {
         // Burn Rate Chart
         const burnRateCtx = document.getElementById('burnRateChart');
         if (burnRateCtx) {
-            new Chart(burnRateCtx, {
+            window.chartInstances.burnRateChart = new Chart(burnRateCtx, {
                 type: 'line',
                 data: {
                     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
