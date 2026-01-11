@@ -1174,22 +1174,48 @@ const PETROLUBE_35_TEMPLATE = {
     id: 'template-petrolube-35',
     name: 'Petrolube Initiative Dossier - 35 Criteria V14',
     is_published: true,
-    created_at: '2025-11-17T00:00:00Z',
+    created_at: '2025-01-11T00:00:00Z',
+    description: 'Enterprise initiative evaluation framework for capturing quantitative and qualitative inputs for scoring and prioritization',
     fields: [
         // SECTION 1: HEADER & IDENTIFICATION
-        { id: '1', key: 'initiative_id', label: '1. Initiative ID', type: 'text', required: true, is_scoring: false, weight: 0, threshold: null, config: {}, category: 'header' },
-        { id: '2', key: 'initiative_name', label: '2. Initiative Name', type: 'text', required: true, is_scoring: false, weight: 0, threshold: null, config: {}, category: 'header' },
-        { 
-            id: '3', 
-            key: 'strategic_domain', 
-            label: '3. Strategic Domain', 
-            type: 'dropdown', 
-            required: true, 
-            is_scoring: false, 
-            weight: 0, 
+        {
+            id: '1',
+            key: 'initiative_id',
+            label: '1. Initiative ID',
+            description: 'Unique identifier for the initiative following Petrolube naming convention (e.g., PET-2025-001, NEW-005)',
+            type: 'text',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            threshold: null,
+            config: { maxLength: 20, placeholder: 'PET-2025-001' },
+            category: 'header'
+        },
+        {
+            id: '2',
+            key: 'initiative_name',
+            label: '2. Initiative Name',
+            description: 'Official name of the initiative for tracking and reporting',
+            type: 'text',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            threshold: null,
+            config: { maxLength: 100, placeholder: 'e.g., Oracle Redwood UX Migration' },
+            category: 'header'
+        },
+        {
+            id: '3',
+            key: 'strategic_domain',
+            label: '3. Strategic Domain',
+            description: 'Primary strategic area that the initiative addresses aligned with Petrolube Vision 2030',
+            type: 'dropdown',
+            required: true,
+            is_scoring: false,
+            weight: 0,
             threshold: null,
             category: 'header',
-            config: { 
+            config: {
                 options: [
                     { value: 'digital_transformation', label: 'Digital Transformation', points: 0 },
                     { value: 'international_expansion', label: 'International Expansion', points: 0 },
@@ -1200,36 +1226,38 @@ const PETROLUBE_35_TEMPLATE = {
                 ]
             }
         },
-        { 
-            id: '4', 
-            key: 'portfolio_category', 
-            label: '4. Portfolio Category', 
-            type: 'dropdown', 
-            required: true, 
-            is_scoring: false, 
-            weight: 0, 
+        {
+            id: '4',
+            key: 'portfolio_category',
+            label: '4. Portfolio Category',
+            description: 'Classification based on 60-15-15-10 portfolio allocation framework',
+            type: 'dropdown',
+            required: true,
+            is_scoring: false,
+            weight: 0,
             threshold: null,
             category: 'header',
-            config: { 
+            config: {
                 options: [
-                    { value: 'core_incremental', label: 'Core Incremental', points: 0 },
-                    { value: 'core_disruptive', label: 'Core Disruptive', points: 0 },
-                    { value: 'non_core_incremental', label: 'Non-Core Incremental', points: 0 },
-                    { value: 'non_core_disruptive', label: 'Non-Core Disruptive', points: 0 }
+                    { value: 'core_incremental', label: 'Core Incremental (60%)', points: 0 },
+                    { value: 'core_disruptive', label: 'Core Disruptive (15%)', points: 0 },
+                    { value: 'non_core_incremental', label: 'Non-Core Incremental (15%)', points: 0 },
+                    { value: 'non_core_disruptive', label: 'Non-Core Disruptive (10%)', points: 0 }
                 ]
             }
         },
-        { 
-            id: '5', 
-            key: 'three_engines_alignment', 
-            label: '5. Three Engines Alignment', 
-            type: 'dropdown', 
-            required: true, 
-            is_scoring: false, 
-            weight: 0, 
+        {
+            id: '5',
+            key: 'three_engines_alignment',
+            label: '5. Three Engines Alignment',
+            description: 'Primary strategic engine contribution per BCG Three Horizons methodology',
+            type: 'dropdown',
+            required: true,
+            is_scoring: false,
+            weight: 0,
             threshold: null,
             category: 'header',
-            config: { 
+            config: {
                 options: [
                     { value: 'e1_sustain_grow', label: 'E1: Sustain & Grow Core (60%)', points: 0 },
                     { value: 'e2_expand_inorganically', label: 'E2: Expand Inorganically (25%)', points: 0 },
@@ -1239,17 +1267,18 @@ const PETROLUBE_35_TEMPLATE = {
         },
         
         // SECTION 2: STRATEGIC POSITIONING
-        { 
-            id: '6', 
-            key: 'quadrant', 
-            label: '6. Quadrant', 
-            type: 'dropdown', 
-            required: true, 
-            is_scoring: false, 
-            weight: 0, 
+        {
+            id: '6',
+            key: 'quadrant',
+            label: '6. Quadrant',
+            description: 'Position on Impact vs Feasibility Matrix determining execution approach',
+            type: 'dropdown',
+            required: true,
+            is_scoring: false,
+            weight: 0,
             threshold: null,
             category: 'strategic',
-            config: { 
+            config: {
                 options: [
                     { value: 'quick_win', label: 'Quick-Win (0-12m)', points: 0 },
                     { value: 'push_harder', label: 'Push-Harder (6-18m)', points: 0 },
@@ -1258,10 +1287,11 @@ const PETROLUBE_35_TEMPLATE = {
                 ]
             }
         },
-        { 
-            id: '7', 
-            key: 'strategic_priority', 
-            label: '7. Strategic Priority', 
+        {
+            id: '7',
+            key: 'strategic_priority',
+            label: '7. Strategic Priority',
+            description: 'Priority classification for resource allocation and executive attention', 
             type: 'dropdown', 
             required: true, 
             is_scoring: true, 
@@ -1277,17 +1307,18 @@ const PETROLUBE_35_TEMPLATE = {
                 ]
             }
         },
-        { 
-            id: '8', 
-            key: 'year1_tier', 
-            label: '8. Year 1 Tier Assignment', 
-            type: 'dropdown', 
-            required: true, 
-            is_scoring: true, 
-            weight: 10, 
+        {
+            id: '8',
+            key: 'year1_tier',
+            label: '8. Year 1 Tier Assignment',
+            description: 'Tier classification based on dependency criticality and value delivery timeline',
+            type: 'dropdown',
+            required: true,
+            is_scoring: true,
+            weight: 10,
             threshold: null,
             category: 'strategic',
-            config: { 
+            config: {
                 options: [
                     { value: 'tier_1a', label: 'Tier 1A: Catastrophic Dependency', points: 100 },
                     { value: 'tier_1b', label: 'Tier 1B: Oracle AI Quick Win', points: 90 },
@@ -1298,17 +1329,18 @@ const PETROLUBE_35_TEMPLATE = {
                 ]
             }
         },
-        { 
-            id: '9', 
-            key: 'aramco_response', 
-            label: '9. Aramco Competitive Response Type', 
-            type: 'dropdown', 
-            required: true, 
-            is_scoring: false, 
-            weight: 0, 
+        {
+            id: '9',
+            key: 'aramco_response',
+            label: '9. Aramco Competitive Response Type',
+            description: 'Competitive positioning relative to Aramco-Valvoline market entry',
+            type: 'dropdown',
+            required: true,
+            is_scoring: false,
+            weight: 0,
             threshold: null,
             category: 'strategic',
-            config: { 
+            config: {
                 options: [
                     { value: 'offensive', label: 'Offensive: Preemptive market capture', points: 0 },
                     { value: 'defensive', label: 'Defensive: Market share protection', points: 0 },
@@ -1316,35 +1348,192 @@ const PETROLUBE_35_TEMPLATE = {
                 ]
             }
         },
-        { id: '10', key: 'bcg_i2i_target', label: '10. BCG i2i Target Contribution (+points)', type: 'number', required: true, is_scoring: false, weight: 0, threshold: null, config: { min: 0, max: 50 }, category: 'strategic' },
-        
+        {
+            id: '10',
+            key: 'bcg_i2i_target',
+            label: '10. BCG i2i Target Contribution (+points)',
+            description: 'Expected contribution to BCG i2i innovation score improvement (baseline 59 → target 65-68)',
+            type: 'number',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            threshold: null,
+            config: { min: 0, max: 50, step: 1, unit: 'points', placeholder: 'Expected i2i contribution' },
+            category: 'strategic'
+        },
+
         // SECTION 3: FRAMEWORK V4.0 SCORING
-        { id: '11', key: 'strategic_impact_score', label: '11. Strategic Impact Score (0-25)', type: 'number', required: true, is_scoring: true, weight: 25, threshold: null, config: { min: 0, max: 25 }, category: 'scoring' },
-        { id: '12', key: 'financial_impact_score', label: '12. Financial Impact Score (0-25)', type: 'number', required: true, is_scoring: true, weight: 25, threshold: null, config: { min: 0, max: 25 }, category: 'scoring' },
-        { id: '13', key: 'execution_feasibility_score', label: '13. Execution Feasibility Score (0-20)', type: 'number', required: true, is_scoring: true, weight: 20, threshold: null, config: { min: 0, max: 20 }, category: 'scoring' },
-        { id: '14', key: 'risk_management_score', label: '14. Risk Management Score (0-15)', type: 'number', required: true, is_scoring: false, weight: 0, threshold: null, config: { min: 0, max: 15 }, category: 'scoring' },
-        { id: '15', key: 'innovation_index_score', label: '15. Innovation Index Score (0-15)', type: 'number', required: true, is_scoring: false, weight: 0, threshold: null, config: { min: 0, max: 15 }, category: 'scoring' },
+        {
+            id: '11',
+            key: 'strategic_impact_score',
+            label: '11. Strategic Impact Score (D1)',
+            description: 'Dimension 1 score measuring strategic value including revenue potential, competitive advantage, and Vision 2030 alignment',
+            type: 'number',
+            required: true,
+            is_scoring: true,
+            weight: 25,
+            threshold: null,
+            config: { min: 0, max: 25, step: 1, unit: 'points' },
+            category: 'scoring'
+        },
+        {
+            id: '12',
+            key: 'financial_impact_score',
+            label: '12. Financial Impact Score (D1 sub)',
+            description: 'Financial component of D1 measuring NPV, IRR, and ROI projections',
+            type: 'number',
+            required: true,
+            is_scoring: true,
+            weight: 25,
+            threshold: null,
+            config: { min: 0, max: 25, step: 1, unit: 'points' },
+            category: 'scoring'
+        },
+        {
+            id: '13',
+            key: 'execution_feasibility_score',
+            label: '13. Execution Feasibility Score (D2)',
+            description: 'Dimension 2 score measuring implementation feasibility including technology readiness, resource availability, and timeline achievability',
+            type: 'number',
+            required: true,
+            is_scoring: true,
+            weight: 20,
+            threshold: null,
+            config: { min: 0, max: 20, step: 1, unit: 'points' },
+            category: 'scoring'
+        },
+        {
+            id: '14',
+            key: 'risk_management_score',
+            label: '14. Risk Management Score',
+            description: 'Assessment of risk identification, mitigation planning, and governance readiness',
+            type: 'number',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            threshold: null,
+            config: { min: 0, max: 15, step: 1, unit: 'points' },
+            category: 'scoring'
+        },
+        {
+            id: '15',
+            key: 'innovation_index_score',
+            label: '15. Innovation Index Score',
+            description: 'Measure of innovation maturity contribution aligned with BCG i2i dimensions',
+            type: 'number',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            threshold: null,
+            config: { min: 0, max: 15, step: 1, unit: 'points' },
+            category: 'scoring'
+        },
         
         // SECTION 4: BUSINESS CASE
-        { id: '17', key: 'investment_required', label: '17. Total Investment Required (SAR)', type: 'currency', required: true, is_scoring: false, weight: 0, threshold: null, config: { min: 0, max: 100000000 }, category: 'financial' },
-        { id: '17b', key: 'year1_investment', label: '17b. Year 1 Investment (SAR)', type: 'currency', required: true, is_scoring: false, weight: 0, threshold: null, config: { min: 0, max: 50000000 }, category: 'financial' },
-        { id: '18', key: 'timeline_months', label: '18. Total Timeline (Months)', type: 'number', required: true, is_scoring: false, weight: 0, threshold: null, config: { min: 1, max: 60 }, category: 'financial' },
-        { id: '19', key: 'resource_fte', label: '19. Total FTE Required', type: 'number', required: true, is_scoring: false, weight: 0, threshold: null, config: { min: 0, max: 100 }, category: 'financial' },
-        { id: '20', key: 'expected_roi_year3', label: '20. Expected ROI Year 3 (SAR)', type: 'currency', required: true, is_scoring: false, weight: 0, threshold: null, config: { min: 0, max: 100000000 }, category: 'financial' },
-        { 
-            id: '21', 
-            key: 'irr_percentage', 
-            label: '21. IRR - Internal Rate of Return (%)', 
-            type: 'number', 
-            required: true, 
-            is_scoring: true, 
-            weight: 5, 
-            threshold: 15,
-            config: { min: 0, max: 100 },
+        {
+            id: '17',
+            key: 'investment_required',
+            label: '17. Total Investment Required',
+            description: 'Total capital and operational investment required over project lifecycle',
+            type: 'currency',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            threshold: null,
+            config: { min: 0, max: 100000000, placeholder: 'Total investment in SAR' },
             category: 'financial'
         },
-        { id: '22', key: 'payback_period', label: '22. Payback Period (Years)', type: 'number', required: true, is_scoring: false, weight: 0, threshold: null, config: { min: 0, max: 10 }, category: 'financial' },
-        { id: '23', key: 'npv_5year', label: '23. NPV @ 12% WACC - 5 Year (SAR)', type: 'currency', required: true, is_scoring: false, weight: 0, threshold: null, config: { min: -50000000, max: 100000000 }, category: 'financial' },
+        {
+            id: '17b',
+            key: 'year1_investment',
+            label: '17b. Year 1 Investment',
+            description: 'Investment required in Year 1 (2026) for budget planning',
+            type: 'currency',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            threshold: null,
+            config: { min: 0, max: 50000000, placeholder: 'Year 1 investment in SAR' },
+            category: 'financial'
+        },
+        {
+            id: '18',
+            key: 'timeline_months',
+            label: '18. Total Timeline',
+            description: 'Total implementation timeline from Gate 0 to full deployment',
+            type: 'number',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            threshold: null,
+            config: { min: 1, max: 60, step: 1, unit: 'months', placeholder: 'Timeline in months' },
+            category: 'financial'
+        },
+        {
+            id: '19',
+            key: 'resource_fte',
+            label: '19. Total FTE Required',
+            description: 'Full-time equivalent resources required for implementation',
+            type: 'number',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            threshold: null,
+            config: { min: 0, max: 100, step: 1, unit: 'FTE', placeholder: 'Number of FTEs' },
+            category: 'financial'
+        },
+        {
+            id: '20',
+            key: 'expected_roi_year3',
+            label: '20. Expected ROI Year 3',
+            description: 'Expected cumulative return on investment by end of Year 3',
+            type: 'currency',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            threshold: null,
+            config: { min: 0, max: 100000000, placeholder: 'Expected Year 3 ROI in SAR' },
+            category: 'financial'
+        },
+        {
+            id: '21',
+            key: 'irr_percentage',
+            label: '21. IRR - Internal Rate of Return',
+            description: 'Internal Rate of Return calculated using standard DCF methodology (threshold: 15% minimum)',
+            type: 'number',
+            required: true,
+            is_scoring: true,
+            weight: 5,
+            threshold: 15,
+            config: { min: 0, max: 100, step: 1, unit: '%', placeholder: 'IRR percentage' },
+            category: 'financial'
+        },
+        {
+            id: '22',
+            key: 'payback_period',
+            label: '22. Payback Period',
+            description: 'Time to recover initial investment from cumulative cash flows',
+            type: 'number',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            threshold: null,
+            config: { min: 0, max: 10, step: 0.1, unit: 'years', placeholder: 'Payback period in years' },
+            category: 'financial'
+        },
+        {
+            id: '23',
+            key: 'npv_5year',
+            label: '23. NPV @ 12% WACC - 5 Year',
+            description: 'Net Present Value over 5-year horizon using 12% weighted average cost of capital',
+            type: 'currency',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            threshold: null,
+            config: { min: -50000000, max: 100000000, placeholder: '5-year NPV in SAR' },
+            category: 'financial'
+        },
         
         // SECTION 5: IMPLEMENTATION
         { id: '24', key: 'phase1_duration', label: '24. Phase 1 Duration (Months)', type: 'number', required: true, is_scoring: false, weight: 0, threshold: null, config: { min: 1, max: 24 }, category: 'implementation' },
@@ -4692,33 +4881,46 @@ function renderWizardStep5(template) {
 
 function renderFieldInput(field) {
     const value = state.wizardData.criteriaValues?.[field.key] || '';
-    
+    const description = field.description ? `<small style="color: var(--neutral-600); font-size: 12px; display: block; margin-top: 4px;">${field.description}</small>` : '';
+    const placeholder = field.config?.placeholder || '';
+
     if (field.type === 'text') {
         return `
             <div class="form-group">
                 <label class="form-label ${field.required ? 'required' : ''}">${field.label}</label>
-                <input type="text" class="form-control" id="field-${field.key}" 
-                       value="${value}" onchange="updateFieldValue('${field.key}', this.value)">
+                ${description}
+                <input type="text" class="form-control" id="field-${field.key}"
+                       value="${value}" placeholder="${placeholder}"
+                       maxlength="${field.config?.maxLength || 200}"
+                       onchange="updateFieldValue('${field.key}', this.value)">
             </div>
         `;
     } else if (field.type === 'number') {
+        const unit = field.config?.unit || '';
         return `
             <div class="form-group">
                 <label class="form-label ${field.required ? 'required' : ''}">${field.label}</label>
-                <input type="number" class="form-control" id="field-${field.key}" 
-                       value="${value}" min="${field.config.min || 0}" max="${field.config.max || 100}"
-                       onchange="updateFieldValue('${field.key}', parseFloat(this.value))">
+                ${description}
+                <div style="position: relative;">
+                    <input type="number" class="form-control" id="field-${field.key}"
+                           value="${value}" min="${field.config?.min || 0}" max="${field.config?.max || 100}"
+                           step="${field.config?.step || 1}" placeholder="${placeholder}"
+                           style="${unit ? 'padding-right: 50px;' : ''}"
+                           onchange="updateFieldValue('${field.key}', parseFloat(this.value))">
+                    ${unit ? `<span style="position: absolute; right: 14px; top: 13px; color: var(--neutral-500); font-size: 14px; font-weight: 600;">${unit}</span>` : ''}
+                </div>
             </div>
         `;
     } else if (field.type === 'currency') {
         return `
             <div class="form-group">
                 <label class="form-label ${field.required ? 'required' : ''}">${field.label}</label>
+                ${description}
                 <div style="position: relative;">
                     <span style="position: absolute; left: 14px; top: 13px; color: var(--neutral-500); font-size: 14px; font-weight: 600;">SAR</span>
-                    <input type="number" class="form-control" id="field-${field.key}" 
+                    <input type="number" class="form-control" id="field-${field.key}"
                            style="padding-left: 54px;"
-                           value="${value}" min="0" step="1000"
+                           value="${value}" min="0" step="1000" placeholder="${placeholder}"
                            onchange="updateFieldValue('${field.key}', parseFloat(this.value))">
                 </div>
             </div>
@@ -4727,6 +4929,7 @@ function renderFieldInput(field) {
         return `
             <div class="form-group">
                 <label class="form-label ${field.required ? 'required' : ''}">${field.label}</label>
+                ${description}
                 <select class="form-control" id="field-${field.key}" onchange="updateFieldValue('${field.key}', this.value)">
                     <option value="">Select...</option>
                     ${field.config.options.map(opt => `
@@ -4739,14 +4942,15 @@ function renderFieldInput(field) {
         return `
             <div class="form-group">
                 <label class="form-label ${field.required ? 'required' : ''}">${field.label}</label>
+                ${description}
                 <div style="display: flex; gap: 16px; padding-top: 8px;">
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                         <input type="radio" name="${field.key}" value="yes" ${value === 'yes' ? 'checked' : ''} onchange="updateFieldValue('${field.key}', 'yes')">
-                        <span>Yes</span>
+                        <span>Yes - Approved</span>
                     </label>
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                         <input type="radio" name="${field.key}" value="no" ${value === 'no' ? 'checked' : ''} onchange="updateFieldValue('${field.key}', 'no')">
-                        <span>No</span>
+                        <span>No - Pending</span>
                     </label>
                 </div>
             </div>
