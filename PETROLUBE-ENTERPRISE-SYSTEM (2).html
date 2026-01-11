@@ -498,14 +498,69 @@ footer {
 `;
 
 // ============================================================================
+// USER ROLES & AUTHENTICATION
+// ============================================================================
+
+const USER_ROLES = {
+    AGB_MEMBER: 'agb_member',
+    PROJECT_OWNER: 'project_owner',
+    FINANCE: 'finance',
+    LEGAL: 'legal',
+    IT: 'it',
+    PMO: 'pmo',
+    ADMIN: 'admin'
+};
+
+const USERS = [
+    { id: 'user-1', name: 'Ghadah Al-Otaibi', role: USER_ROLES.PMO, email: 'ghadah@petrolube.sa', department: 'PMO' },
+    { id: 'user-2', name: 'Ahmed Al-Fahad', role: USER_ROLES.LEGAL, email: 'ahmed.legal@petrolube.sa', department: 'Legal' },
+    { id: 'user-3', name: 'Sara Al-Qahtani', role: USER_ROLES.FINANCE, email: 'sara.finance@petrolube.sa', department: 'Finance' },
+    { id: 'user-4', name: 'Khalid Al-Mansour', role: USER_ROLES.IT, email: 'khalid.it@petrolube.sa', department: 'IT' },
+    { id: 'user-5', name: 'Dr. Abdulaziz Al-Saud', role: USER_ROLES.AGB_MEMBER, email: 'abdulaziz@petrolube.sa', department: 'AGB' },
+    { id: 'user-6', name: 'Rawan Al-Harbi', role: USER_ROLES.PROJECT_OWNER, email: 'rawan@petrolube.sa', department: 'Operations' },
+    { id: 'user-7', name: 'Fahad Al-Dossary', role: USER_ROLES.ADMIN, email: 'fahad.admin@petrolube.sa', department: 'Administration' }
+];
+
+// Legal Review Criteria (1-5 scale, /30 total)
+const LEGAL_CRITERIA = [
+    { id: 1, title: 'Regulatory Compliance Completeness', desc: 'PDPL, NCA, Labor Law verified', weight: 5 },
+    { id: 2, title: 'Contract Quality & Risk Mitigation', desc: 'Terms clear, liability balanced', weight: 5 },
+    { id: 3, title: 'Intellectual Property Protection', desc: 'IP ownership assigned', weight: 5 },
+    { id: 4, title: 'Data Privacy & Security Compliance', desc: 'PDPL assessment, DPA in place', weight: 5 },
+    { id: 5, title: 'Liability & Indemnification Balance', desc: 'Caps appropriate', weight: 5 },
+    { id: 6, title: 'Overall Legal Risk Acceptability', desc: 'Risk within tolerance', weight: 5 }
+];
+
+// Finance Review Criteria (1-5 scale, /30 total)
+const FINANCE_CRITERIA = [
+    { id: 1, title: 'Budget Accuracy & Completeness', desc: 'Detailed budget breakdown', weight: 5 },
+    { id: 2, title: 'ROI Calculation Quality', desc: 'NPV, IRR, Payback Period calculated', weight: 5 },
+    { id: 3, title: 'Financial Risk Assessment', desc: 'Currency risk, budget overrun probability', weight: 5 },
+    { id: 4, title: 'Funding Source Clarity', desc: 'Approved budget line, allocation method', weight: 5 },
+    { id: 5, title: 'Cash Flow Feasibility', desc: 'Payment schedule realistic', weight: 5 },
+    { id: 6, title: 'Alignment with Portfolio Strategy', desc: 'Fits strategic tier', weight: 5 }
+];
+
+// IT Review Criteria (1-5 scale, /30 total)
+const IT_CRITERIA = [
+    { id: 1, title: 'Security Compliance', desc: 'NCA cybersecurity standards met', weight: 5 },
+    { id: 2, title: 'Infrastructure Capacity', desc: 'Systems can support requirements', weight: 5 },
+    { id: 3, title: 'Technical Specifications Quality', desc: 'Clear, complete, achievable', weight: 5 },
+    { id: 4, title: 'Integration Complexity', desc: 'Compatible with existing systems', weight: 5 },
+    { id: 5, title: 'Data Architecture', desc: 'Data governance standards followed', weight: 5 },
+    { id: 6, title: 'IT Risk Assessment', desc: 'Technical risks identified and mitigated', weight: 5 }
+];
+
+// ============================================================================
 // APP STATE
 // ============================================================================
 
 const state = {
     currentPage: 'landing',
     currentTenant: 'petrolube',
-    currentRole: 'pmo',
-    currentUserName: 'Ghadah (CITO)',
+    currentUser: null, // Will be set on login
+    currentRole: null,
+    currentUserName: null,
     wizardStep: 1,
     wizardData: { criteriaValues: {} },
     showDescriptionBox: true,
@@ -513,6 +568,7 @@ const state = {
     aiComplete: false,
     selectedScenario: 'A',
     selectedPMOProject: null,
+    selectedReviewProject: null, // For department reviewers
     projects: []
 };
 
@@ -524,7 +580,9 @@ const SAMPLE_PROJECTS = [
     {
         id: 'proj-1',
         name: 'Oracle ERP Redwood UX Migration',
-        status: 'Ready',
+        status: 'awaiting_legal_review',
+        submittedBy: 'user-6',
+        submittedAt: '2025-01-08T10:00:00Z',
         criteriaValues: {
             initiative_name: 'Oracle ERP Redwood UX Migration',
             initiative_id: 'INI-2025-001',
@@ -536,6 +594,50 @@ const SAMPLE_PROJECTS = [
                 confidence: 'high'
             }
         },
+        approvalChain: {
+            legal: {
+                status: 'pending',
+                score: null,
+                reviewer: null,
+                reviewedAt: null,
+                scores: {},
+                comments: '',
+                mandatoryFields: {}
+            },
+            finance: {
+                status: 'not_started',
+                score: null,
+                reviewer: null,
+                reviewedAt: null,
+                scores: {},
+                comments: '',
+                mandatoryFields: {}
+            },
+            it: {
+                status: 'not_started',
+                score: null,
+                reviewer: null,
+                reviewedAt: null,
+                scores: {},
+                comments: '',
+                mandatoryFields: {}
+            },
+            agb: {
+                status: 'not_started',
+                approved: null,
+                reviewer: null,
+                reviewedAt: null,
+                comments: ''
+            }
+        },
+        auditTrail: [
+            {
+                timestamp: '2025-01-08T10:00:00Z',
+                userId: 'user-6',
+                action: 'Project submitted for approval',
+                details: 'Initiated approval chain workflow'
+            }
+        ],
         tasks: [
             {
                 name: 'Requirements Gathering',
@@ -577,7 +679,9 @@ const SAMPLE_PROJECTS = [
     {
         id: 'proj-2',
         name: 'AI-Powered Predictive Maintenance',
-        status: 'Ready',
+        status: 'awaiting_finance_review',
+        submittedBy: 'user-6',
+        submittedAt: '2025-01-06T10:00:00Z',
         criteriaValues: {
             initiative_name: 'AI-Powered Predictive Maintenance',
             initiative_id: 'INI-2025-002',
@@ -589,6 +693,60 @@ const SAMPLE_PROJECTS = [
                 confidence: 'medium'
             }
         },
+        approvalChain: {
+            legal: {
+                status: 'approved',
+                score: 26,
+                reviewer: 'user-2',
+                reviewedAt: '2025-01-07T14:00:00Z',
+                scores: { 1: 4, 2: 5, 3: 4, 4: 5, 5: 4, 6: 4 },
+                comments: 'Legal review complete. All regulatory requirements met.',
+                mandatoryFields: {
+                    saudi_regulatory_compliance: 'Compliant',
+                    contract_review_status: 'Approved',
+                    legal_risk_rating: 'Medium'
+                }
+            },
+            finance: {
+                status: 'pending',
+                score: null,
+                reviewer: null,
+                reviewedAt: null,
+                scores: {},
+                comments: '',
+                mandatoryFields: {}
+            },
+            it: {
+                status: 'not_started',
+                score: null,
+                reviewer: null,
+                reviewedAt: null,
+                scores: {},
+                comments: '',
+                mandatoryFields: {}
+            },
+            agb: {
+                status: 'not_started',
+                approved: null,
+                reviewer: null,
+                reviewedAt: null,
+                comments: ''
+            }
+        },
+        auditTrail: [
+            {
+                timestamp: '2025-01-06T10:00:00Z',
+                userId: 'user-6',
+                action: 'Project submitted for approval',
+                details: 'Initiated approval chain workflow'
+            },
+            {
+                timestamp: '2025-01-07T14:00:00Z',
+                userId: 'user-2',
+                action: 'Legal review completed',
+                details: 'Score: 26/30 - Approved'
+            }
+        ],
         tasks: [
             {
                 name: 'Data Collection Setup',
@@ -616,7 +774,9 @@ const SAMPLE_PROJECTS = [
     {
         id: 'proj-3',
         name: 'Digital Twin Manufacturing',
-        status: 'Ready',
+        status: 'approved',
+        submittedBy: 'user-6',
+        submittedAt: '2025-01-02T10:00:00Z',
         criteriaValues: {
             initiative_name: 'Digital Twin Manufacturing',
             initiative_id: 'INI-2025-003',
@@ -628,13 +788,94 @@ const SAMPLE_PROJECTS = [
                 confidence: 'medium'
             }
         },
+        approvalChain: {
+            legal: {
+                status: 'approved',
+                score: 28,
+                reviewer: 'user-2',
+                reviewedAt: '2025-01-03T10:00:00Z',
+                scores: { 1: 5, 2: 5, 3: 4, 4: 5, 5: 5, 6: 4 },
+                comments: 'Excellent legal compliance. All requirements met.',
+                mandatoryFields: {
+                    saudi_regulatory_compliance: 'Fully Compliant',
+                    contract_review_status: 'Approved',
+                    legal_risk_rating: 'Low'
+                }
+            },
+            finance: {
+                status: 'approved',
+                score: 27,
+                reviewer: 'user-3',
+                reviewedAt: '2025-01-04T11:00:00Z',
+                scores: { 1: 5, 2: 5, 3: 4, 4: 5, 5: 4, 6: 4 },
+                comments: 'Strong financial case with solid ROI projections.',
+                mandatoryFields: {
+                    budget_accuracy: 'High',
+                    roi_calculation: 'Complete',
+                    cfo_approval: 'Approved'
+                }
+            },
+            it: {
+                status: 'approved',
+                score: 25,
+                reviewer: 'user-4',
+                reviewedAt: '2025-01-05T14:00:00Z',
+                scores: { 1: 4, 2: 4, 3: 4, 4: 5, 5: 4, 6: 4 },
+                comments: 'Technical requirements well defined. Infrastructure ready.',
+                mandatoryFields: {
+                    security_compliance: 'NCA Compliant',
+                    infrastructure_assessment: 'Ready',
+                    technical_risk: 'Medium'
+                }
+            },
+            agb: {
+                status: 'approved',
+                approved: true,
+                reviewer: 'user-5',
+                reviewedAt: '2025-01-07T10:00:00Z',
+                comments: 'Overall compliance: 89%. Project approved for execution.',
+                complianceScore: 89
+            }
+        },
+        auditTrail: [
+            {
+                timestamp: '2025-01-02T10:00:00Z',
+                userId: 'user-6',
+                action: 'Project submitted for approval',
+                details: 'Initiated approval chain workflow'
+            },
+            {
+                timestamp: '2025-01-03T10:00:00Z',
+                userId: 'user-2',
+                action: 'Legal review completed',
+                details: 'Score: 28/30 - Approved'
+            },
+            {
+                timestamp: '2025-01-04T11:00:00Z',
+                userId: 'user-3',
+                action: 'Finance review completed',
+                details: 'Score: 27/30 - Approved'
+            },
+            {
+                timestamp: '2025-01-05T14:00:00Z',
+                userId: 'user-4',
+                action: 'IT review completed',
+                details: 'Score: 25/30 - Approved'
+            },
+            {
+                timestamp: '2025-01-07T10:00:00Z',
+                userId: 'user-5',
+                action: 'AGB final approval',
+                details: 'Overall compliance: 89% - Project approved'
+            }
+        ],
         tasks: [],
         milestones: [],
         scores: {
             compositeScore: 79.8,
             rank: 3
         },
-        createdAt: '2025-01-07T10:00:00Z'
+        createdAt: '2025-01-02T10:00:00Z'
     }
 ];
 
@@ -670,31 +911,44 @@ function renderLanding() {
                     <p style="color: rgba(255,255,255,0.8); font-size: 16px;">AI-Powered • PMO Dashboard • Task Management</p>
                 </div>
 
-                <div style="background: white; border-radius: 20px; padding: 48px; max-width: 600px; margin: 0 auto; box-shadow: 0 20px 60px rgba(0,0,0,0.4);">
-                    <h2 style="color: var(--petro-green-800); margin-bottom: 32px; font-size: 26px; font-weight: 800;">Get Started</h2>
+                <div style="background: white; border-radius: 20px; padding: 48px; max-width: 700px; margin: 0 auto; box-shadow: 0 20px 60px rgba(0,0,0,0.4);">
+                    <h2 style="color: var(--petro-green-800); margin-bottom: 32px; font-size: 26px; font-weight: 800;">Login</h2>
 
                     <div style="margin-bottom: 24px;">
-                        <label style="font-weight: 700; margin-bottom: 12px; display: block; color: var(--neutral-700);">Select Role</label>
-                        ${[
-                            { id: 'pmo', name: 'PMO Manager', desc: 'Full system access' },
-                            { id: 'executive', name: 'Executive', desc: 'Strategic overview' }
-                        ].map(role => `
-                            <div onclick="selectRole('${role.id}', '${role.name}')"
-                                 style="padding: 18px 20px; border: 2px solid ${state.currentRole === role.id ? 'var(--petro-green-700)' : 'var(--neutral-200)'};
-                                        border-radius: 10px; margin-bottom: 12px; cursor: pointer;
-                                        background: ${state.currentRole === role.id ? 'var(--petro-green-50)' : 'white'}; transition: all 0.2s;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <strong style="font-weight: 700; color: var(--neutral-900);">${role.name}</strong>
-                                        <p style="font-size: 13px; color: var(--neutral-600); margin-top: 4px;">${role.desc}</p>
+                        <label style="font-weight: 700; margin-bottom: 12px; display: block; color: var(--neutral-700);">Select User</label>
+                        <div style="max-height: 500px; overflow-y: auto;">
+                            ${USERS.map(user => {
+                                const roleIcons = {
+                                    pmo: '📊',
+                                    legal: '⚖️',
+                                    finance: '💰',
+                                    it: '💻',
+                                    agb_member: '👔',
+                                    project_owner: '📁',
+                                    admin: '⚙️'
+                                };
+                                const isSelected = state.currentUser?.id === user.id;
+                                return `
+                                <div onclick="loginAsUser('${user.id}')"
+                                     style="padding: 16px 20px; border: 2px solid ${isSelected ? 'var(--petro-green-700)' : 'var(--neutral-200)'};
+                                            border-radius: 10px; margin-bottom: 10px; cursor: pointer;
+                                            background: ${isSelected ? 'var(--petro-green-50)' : 'white'}; transition: all 0.2s;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <div style="font-size: 24px;">${roleIcons[user.role] || '👤'}</div>
+                                            <div>
+                                                <strong style="font-weight: 700; color: var(--neutral-900);">${user.name}</strong>
+                                                <p style="font-size: 13px; color: var(--neutral-600); margin-top: 2px;">${user.department} • ${user.role.replace('_', ' ').toUpperCase()}</p>
+                                            </div>
+                                        </div>
+                                        ${isSelected ? '<div style="width: 20px; height: 20px; background: var(--petro-green-700); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;">✓</div>' : ''}
                                     </div>
-                                    ${state.currentRole === role.id ? '<div style="width: 20px; height: 20px; background: var(--petro-green-700); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;">✓</div>' : ''}
                                 </div>
-                            </div>
-                        `).join('')}
+                            `}).join('')}
+                        </div>
                     </div>
 
-                    <button class="btn btn-gold btn-block btn-lg" onclick="continueToDashboard()">
+                    <button class="btn btn-gold btn-block btn-lg" onclick="continueToDashboard()" ${!state.currentUser ? 'disabled' : ''}>
                         Continue to Dashboard →
                     </button>
                 </div>
@@ -704,6 +958,26 @@ function renderLanding() {
 }
 
 function renderHeader() {
+    // Determine navigation based on user role
+    let navLinks = '';
+
+    if (state.currentRole === USER_ROLES.LEGAL) {
+        navLinks = `<a href="#" class="nav-link ${state.currentPage === 'legal-review' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('legal-review');">⚖️ Legal Review</a>`;
+    } else if (state.currentRole === USER_ROLES.FINANCE) {
+        navLinks = `<a href="#" class="nav-link ${state.currentPage === 'finance-review' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('finance-review');">💰 Finance Review</a>`;
+    } else if (state.currentRole === USER_ROLES.IT) {
+        navLinks = `<a href="#" class="nav-link ${state.currentPage === 'it-review' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('it-review');">💻 IT Review</a>`;
+    } else if (state.currentRole === USER_ROLES.AGB_MEMBER) {
+        navLinks = `<a href="#" class="nav-link ${state.currentPage === 'agb-review' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('agb-review');">👔 AGB Approval</a>`;
+    } else {
+        // PMO, Project Owner, Admin get full navigation
+        navLinks = `
+            <a href="#" class="nav-link ${state.currentPage === 'dashboard' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('dashboard');">Dashboard</a>
+            <a href="#" class="nav-link ${state.currentPage === 'projects' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('projects');">Projects</a>
+            <a href="#" class="nav-link ${state.currentPage === 'pmo' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('pmo');">PMO Manager</a>
+        `;
+    }
+
     return `
         <header>
             <div class="header-content container">
@@ -715,13 +989,12 @@ function renderHeader() {
                     </div>
                 </div>
                 <nav>
-                    <a href="#" class="nav-link ${state.currentPage === 'dashboard' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('dashboard');">Dashboard</a>
-                    <a href="#" class="nav-link ${state.currentPage === 'projects' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('projects');">Projects</a>
-                    <a href="#" class="nav-link ${state.currentPage === 'pmo' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('pmo');">PMO Manager</a>
+                    ${navLinks}
                 </nav>
                 <div class="user-info">
                     <div class="user-badge">
                         <span style="font-weight: 700;">${state.currentUserName}</span>
+                        <div style="font-size: 11px; opacity: 0.7; margin-top: 2px;">${state.currentUser?.department || ''}</div>
                     </div>
                     <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
                 </div>
@@ -749,6 +1022,10 @@ function renderPage() {
     if (state.currentPage === 'dashboard') return renderDashboard();
     if (state.currentPage === 'projects') return renderProjects();
     if (state.currentPage === 'pmo') return renderPMOManager();
+    if (state.currentPage === 'legal-review') return renderLegalReview();
+    if (state.currentPage === 'finance-review') return renderFinanceReview();
+    if (state.currentPage === 'it-review') return renderITReview();
+    if (state.currentPage === 'agb-review') return renderAGBReview();
     return '<div class="container">Page not found</div>';
 }
 
@@ -1160,8 +1437,595 @@ function renderWizardStep3() {
 }
 
 // ============================================================================
+// LEGAL REVIEW DASHBOARD
+// ============================================================================
+
+function renderLegalReview() {
+    const pendingProjects = state.projects.filter(p =>
+        p.status === 'awaiting_legal_review' ||
+        (p.approvalChain?.legal?.status === 'pending')
+    );
+
+    return `
+        <div class="container" style="padding: 40px 32px;">
+            <div style="margin-bottom: 32px;">
+                <h2 style="font-size: 32px; font-weight: 900; color: var(--neutral-900); margin-bottom: 8px;">⚖️ Legal Review Dashboard</h2>
+                <p style="color: var(--neutral-600); font-size: 16px;">Review projects for legal compliance and regulatory requirements</p>
+            </div>
+
+            <div class="grid grid-3 mb-6">
+                ${[
+                    { icon: '📋', label: 'Pending Reviews', value: pendingProjects.length, color: 'var(--orange-600)' },
+                    { icon: '✓', label: 'Approved Today', value: 0, color: 'var(--green-600)' },
+                    { icon: '⚡', label: 'High Priority', value: pendingProjects.filter(p => p.criteriaValues?.strategic_priority === 'p1_critical').length, color: 'var(--red-600)' }
+                ].map(stat => `
+                    <div class="card" style="padding: 24px; text-align: center;">
+                        <div style="font-size: 40px; margin-bottom: 12px;">${stat.icon}</div>
+                        <div style="font-size: 28px; font-weight: 800; color: ${stat.color}; margin-bottom: 4px;">${stat.value}</div>
+                        <div style="font-size: 13px; color: var(--neutral-600); font-weight: 600; text-transform: uppercase;">${stat.label}</div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <div class="card" style="padding: 32px; margin-bottom: 24px;">
+                <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 24px;">Projects Awaiting Legal Review</h3>
+
+                ${pendingProjects.length === 0 ? `
+                    <div style="text-align: center; padding: 40px; color: var(--neutral-500);">
+                        <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+                        <p style="font-size: 16px; font-weight: 600;">No projects pending review</p>
+                    </div>
+                ` : `
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Project Name</th>
+                                <th>ID</th>
+                                <th>Priority</th>
+                                <th>Investment</th>
+                                <th>Submitted</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pendingProjects.map(p => {
+                                const priorityBadge = {
+                                    'p1_critical': '<span class="badge badge-red">P1 Critical</span>',
+                                    'p2_high': '<span class="badge badge-orange">P2 High</span>',
+                                    'p3_medium': '<span class="badge badge-blue">P3 Medium</span>'
+                                };
+                                return `
+                                <tr>
+                                    <td><strong>${p.name}</strong></td>
+                                    <td>${p.criteriaValues?.initiative_id || 'N/A'}</td>
+                                    <td>${priorityBadge[p.criteriaValues?.strategic_priority] || 'N/A'}</td>
+                                    <td>${p.criteriaValues?.investment_required ? (p.criteriaValues.investment_required / 1000000).toFixed(1) + 'M SAR' : 'N/A'}</td>
+                                    <td>${new Date(p.submittedAt).toLocaleDateString()}</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="startLegalReview('${p.id}')">
+                                            Review
+                                        </button>
+                                    </td>
+                                </tr>
+                            `}).join('')}
+                        </tbody>
+                    </table>
+                `}
+            </div>
+
+            ${state.selectedReviewProject ? renderLegalReviewForm() : ''}
+        </div>
+    `;
+}
+
+function renderLegalReviewForm() {
+    const project = state.projects.find(p => p.id === state.selectedReviewProject);
+    if (!project) return '';
+
+    const legalReview = project.approvalChain?.legal || {};
+    const scores = legalReview.scores || {};
+
+    return `
+        <div class="card" style="padding: 32px; border: 3px solid var(--blue-500);">
+            <h3 style="font-size: 24px; font-weight: 800; margin-bottom: 24px; color: var(--blue-700);">
+                📋 Legal Review: ${project.name}
+            </h3>
+
+            <div style="background: var(--neutral-50); padding: 20px; border-radius: 8px; margin-bottom: 32px;">
+                <div class="grid grid-2">
+                    <div>
+                        <label style="font-size: 12px; font-weight: 600; color: var(--neutral-600); text-transform: uppercase;">Initiative ID</label>
+                        <p style="font-weight: 700; margin-top: 4px;">${project.criteriaValues?.initiative_id || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: 600; color: var(--neutral-600); text-transform: uppercase;">Investment</label>
+                        <p style="font-weight: 700; margin-top: 4px;">${project.criteriaValues?.investment_required ? (project.criteriaValues.investment_required / 1000000).toFixed(1) + 'M SAR' : 'N/A'}</p>
+                    </div>
+                </div>
+            </div>
+
+            <h4 style="font-weight: 800; margin-bottom: 16px;">Legal Scorecard (1-5 scale, /30 total)</h4>
+
+            ${LEGAL_CRITERIA.map(criterion => `
+                <div style="background: white; padding: 20px; border: 1px solid var(--neutral-200); border-radius: 8px; margin-bottom: 16px;">
+                    <div style="margin-bottom: 12px;">
+                        <strong style="font-size: 15px;">${criterion.id}. ${criterion.title}</strong>
+                        <p style="font-size: 13px; color: var(--neutral-600); margin-top: 4px;">${criterion.desc}</p>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <label style="font-size: 13px; font-weight: 600; margin-right: 8px;">Score:</label>
+                        ${[1, 2, 3, 4, 5].map(score => `
+                            <label style="cursor: pointer; padding: 8px 16px; border: 2px solid ${scores[criterion.id] === score ? 'var(--blue-600)' : 'var(--neutral-300)'};
+                                          border-radius: 6px; background: ${scores[criterion.id] === score ? 'var(--blue-50)' : 'white'};
+                                          font-weight: ${scores[criterion.id] === score ? '700' : '500'}; transition: all 0.2s;">
+                                <input type="radio" name="legal-score-${criterion.id}" value="${score}"
+                                       ${scores[criterion.id] === score ? 'checked' : ''}
+                                       onchange="updateLegalScore(${criterion.id}, ${score})"
+                                       style="display: none;">
+                                ${score}
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('')}
+
+            <div style="background: var(--blue-50); padding: 20px; border-radius: 8px; margin: 24px 0;">
+                <div style="font-weight: 800; font-size: 20px; color: var(--blue-700);">
+                    Total Score: ${Object.values(scores).reduce((sum, val) => sum + (val || 0), 0)} / 30
+                </div>
+                ${Object.values(scores).reduce((sum, val) => sum + (val || 0), 0) >= 24 ?
+                    '<div style="margin-top: 8px; color: var(--green-600); font-weight: 600;">✓ Meets approval threshold (≥24/30)</div>' :
+                    '<div style="margin-top: 8px; color: var(--orange-600); font-weight: 600;">⚠ Below approval threshold (need ≥24/30)</div>'
+                }
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Legal Review Comments</label>
+                <textarea class="form-control" id="legal-comments" rows="4"
+                          placeholder="Enter your legal review comments...">${legalReview.comments || ''}</textarea>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button class="btn btn-secondary" onclick="cancelReview()">Cancel</button>
+                <button class="btn btn-primary btn-lg" onclick="submitLegalReview()">
+                    Submit Legal Review
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// ============================================================================
+// FINANCE REVIEW DASHBOARD
+// ============================================================================
+
+function renderFinanceReview() {
+    const pendingProjects = state.projects.filter(p =>
+        p.status === 'awaiting_finance_review' ||
+        (p.approvalChain?.finance?.status === 'pending')
+    );
+
+    return `
+        <div class="container" style="padding: 40px 32px;">
+            <div style="margin-bottom: 32px;">
+                <h2 style="font-size: 32px; font-weight: 900; color: var(--neutral-900); margin-bottom: 8px;">💰 Finance Review Dashboard</h2>
+                <p style="color: var(--neutral-600); font-size: 16px;">Review projects for financial viability and ROI analysis</p>
+            </div>
+
+            <div class="grid grid-3 mb-6">
+                ${[
+                    { icon: '📋', label: 'Pending Reviews', value: pendingProjects.length, color: 'var(--orange-600)' },
+                    { icon: '✓', label: 'Approved Today', value: 0, color: 'var(--green-600)' },
+                    { icon: '💎', label: 'High Value', value: pendingProjects.filter(p => (p.criteriaValues?.investment_required || 0) > 10000000).length, color: 'var(--purple-600)' }
+                ].map(stat => `
+                    <div class="card" style="padding: 24px; text-align: center;">
+                        <div style="font-size: 40px; margin-bottom: 12px;">${stat.icon}</div>
+                        <div style="font-size: 28px; font-weight: 800; color: ${stat.color}; margin-bottom: 4px;">${stat.value}</div>
+                        <div style="font-size: 13px; color: var(--neutral-600); font-weight: 600; text-transform: uppercase;">${stat.label}</div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <div class="card" style="padding: 32px;">
+                <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 24px;">Projects Awaiting Finance Review</h3>
+
+                ${pendingProjects.length === 0 ? `
+                    <div style="text-align: center; padding: 40px; color: var(--neutral-500);">
+                        <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+                        <p style="font-size: 16px; font-weight: 600;">No projects pending review</p>
+                    </div>
+                ` : `
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Investment</th>
+                                <th>Legal Score</th>
+                                <th>Submitted</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pendingProjects.map(p => `
+                                <tr>
+                                    <td><strong>${p.name}</strong></td>
+                                    <td>${p.criteriaValues?.investment_required ? (p.criteriaValues.investment_required / 1000000).toFixed(1) + 'M SAR' : 'N/A'}</td>
+                                    <td><span class="badge badge-green">${p.approvalChain?.legal?.score || 'N/A'}/30</span></td>
+                                    <td>${new Date(p.submittedAt).toLocaleDateString()}</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="startFinanceReview('${p.id}')">
+                                            Review
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `}
+            </div>
+
+            ${state.selectedReviewProject ? renderFinanceReviewForm() : ''}
+        </div>
+    `;
+}
+
+function renderFinanceReviewForm() {
+    const project = state.projects.find(p => p.id === state.selectedReviewProject);
+    if (!project) return '';
+
+    const financeReview = project.approvalChain?.finance || {};
+    const scores = financeReview.scores || {};
+
+    return `
+        <div class="card" style="padding: 32px; border: 3px solid var(--green-500); margin-top: 24px;">
+            <h3 style="font-size: 24px; font-weight: 800; margin-bottom: 24px; color: var(--green-700);">
+                💰 Finance Review: ${project.name}
+            </h3>
+
+            <h4 style="font-weight: 800; margin-bottom: 16px;">Finance Scorecard (1-5 scale, /30 total)</h4>
+
+            ${FINANCE_CRITERIA.map(criterion => `
+                <div style="background: white; padding: 20px; border: 1px solid var(--neutral-200); border-radius: 8px; margin-bottom: 16px;">
+                    <div style="margin-bottom: 12px;">
+                        <strong style="font-size: 15px;">${criterion.id}. ${criterion.title}</strong>
+                        <p style="font-size: 13px; color: var(--neutral-600); margin-top: 4px;">${criterion.desc}</p>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <label style="font-size: 13px; font-weight: 600; margin-right: 8px;">Score:</label>
+                        ${[1, 2, 3, 4, 5].map(score => `
+                            <label style="cursor: pointer; padding: 8px 16px; border: 2px solid ${scores[criterion.id] === score ? 'var(--green-600)' : 'var(--neutral-300)'};
+                                          border-radius: 6px; background: ${scores[criterion.id] === score ? 'var(--green-50)' : 'white'};
+                                          font-weight: ${scores[criterion.id] === score ? '700' : '500'}; transition: all 0.2s;">
+                                <input type="radio" name="finance-score-${criterion.id}" value="${score}"
+                                       ${scores[criterion.id] === score ? 'checked' : ''}
+                                       onchange="updateFinanceScore(${criterion.id}, ${score})"
+                                       style="display: none;">
+                                ${score}
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('')}
+
+            <div style="background: var(--green-50); padding: 20px; border-radius: 8px; margin: 24px 0;">
+                <div style="font-weight: 800; font-size: 20px; color: var(--green-700);">
+                    Total Score: ${Object.values(scores).reduce((sum, val) => sum + (val || 0), 0)} / 30
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Finance Review Comments</label>
+                <textarea class="form-control" id="finance-comments" rows="4"
+                          placeholder="Enter your finance review comments...">${financeReview.comments || ''}</textarea>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button class="btn btn-secondary" onclick="cancelReview()">Cancel</button>
+                <button class="btn btn-primary btn-lg" onclick="submitFinanceReview()">
+                    Submit Finance Review
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// ============================================================================
+// IT REVIEW DASHBOARD
+// ============================================================================
+
+function renderITReview() {
+    const pendingProjects = state.projects.filter(p =>
+        p.status === 'awaiting_it_review' ||
+        (p.approvalChain?.it?.status === 'pending')
+    );
+
+    return `
+        <div class="container" style="padding: 40px 32px;">
+            <div style="margin-bottom: 32px;">
+                <h2 style="font-size: 32px; font-weight: 900; color: var(--neutral-900); margin-bottom: 8px;">💻 IT Review Dashboard</h2>
+                <p style="color: var(--neutral-600); font-size: 16px;">Review projects for technical feasibility and security compliance</p>
+            </div>
+
+            <div class="grid grid-3 mb-6">
+                ${[
+                    { icon: '📋', label: 'Pending Reviews', value: pendingProjects.length, color: 'var(--orange-600)' },
+                    { icon: '✓', label: 'Approved Today', value: 0, color: 'var(--green-600)' },
+                    { icon: '🔒', label: 'Security Critical', value: pendingProjects.length, color: 'var(--red-600)' }
+                ].map(stat => `
+                    <div class="card" style="padding: 24px; text-align: center;">
+                        <div style="font-size: 40px; margin-bottom: 12px;">${stat.icon}</div>
+                        <div style="font-size: 28px; font-weight: 800; color: ${stat.color}; margin-bottom: 4px;">${stat.value}</div>
+                        <div style="font-size: 13px; color: var(--neutral-600); font-weight: 600; text-transform: uppercase;">${stat.label}</div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <div class="card" style="padding: 32px;">
+                <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 24px;">Projects Awaiting IT Review</h3>
+
+                ${pendingProjects.length === 0 ? `
+                    <div style="text-align: center; padding: 40px; color: var(--neutral-500);">
+                        <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+                        <p style="font-size: 16px; font-weight: 600;">No projects pending review</p>
+                    </div>
+                ` : `
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Legal Score</th>
+                                <th>Finance Score</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pendingProjects.map(p => `
+                                <tr>
+                                    <td><strong>${p.name}</strong></td>
+                                    <td><span class="badge badge-green">${p.approvalChain?.legal?.score || 'N/A'}/30</span></td>
+                                    <td><span class="badge badge-green">${p.approvalChain?.finance?.score || 'N/A'}/30</span></td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="startITReview('${p.id}')">
+                                            Review
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `}
+            </div>
+
+            ${state.selectedReviewProject ? renderITReviewForm() : ''}
+        </div>
+    `;
+}
+
+function renderITReviewForm() {
+    const project = state.projects.find(p => p.id === state.selectedReviewProject);
+    if (!project) return '';
+
+    const itReview = project.approvalChain?.it || {};
+    const scores = itReview.scores || {};
+
+    return `
+        <div class="card" style="padding: 32px; border: 3px solid var(--purple-500); margin-top: 24px;">
+            <h3 style="font-size: 24px; font-weight: 800; margin-bottom: 24px; color: var(--purple-700);">
+                💻 IT Review: ${project.name}
+            </h3>
+
+            <h4 style="font-weight: 800; margin-bottom: 16px;">IT Scorecard (1-5 scale, /30 total)</h4>
+
+            ${IT_CRITERIA.map(criterion => `
+                <div style="background: white; padding: 20px; border: 1px solid var(--neutral-200); border-radius: 8px; margin-bottom: 16px;">
+                    <div style="margin-bottom: 12px;">
+                        <strong style="font-size: 15px;">${criterion.id}. ${criterion.title}</strong>
+                        <p style="font-size: 13px; color: var(--neutral-600); margin-top: 4px;">${criterion.desc}</p>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <label style="font-size: 13px; font-weight: 600; margin-right: 8px;">Score:</label>
+                        ${[1, 2, 3, 4, 5].map(score => `
+                            <label style="cursor: pointer; padding: 8px 16px; border: 2px solid ${scores[criterion.id] === score ? 'var(--purple-600)' : 'var(--neutral-300)'};
+                                          border-radius: 6px; background: ${scores[criterion.id] === score ? 'var(--purple-50)' : 'white'};
+                                          font-weight: ${scores[criterion.id] === score ? '700' : '500'}; transition: all 0.2s;">
+                                <input type="radio" name="it-score-${criterion.id}" value="${score}"
+                                       ${scores[criterion.id] === score ? 'checked' : ''}
+                                       onchange="updateITScore(${criterion.id}, ${score})"
+                                       style="display: none;">
+                                ${score}
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('')}
+
+            <div style="background: var(--purple-50); padding: 20px; border-radius: 8px; margin: 24px 0;">
+                <div style="font-weight: 800; font-size: 20px; color: var(--purple-700);">
+                    Total Score: ${Object.values(scores).reduce((sum, val) => sum + (val || 0), 0)} / 30
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">IT Review Comments</label>
+                <textarea class="form-control" id="it-comments" rows="4"
+                          placeholder="Enter your IT review comments...">${itReview.comments || ''}</textarea>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button class="btn btn-secondary" onclick="cancelReview()">Cancel</button>
+                <button class="btn btn-primary btn-lg" onclick="submitITReview()">
+                    Submit IT Review
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// ============================================================================
+// AGB REVIEW DASHBOARD
+// ============================================================================
+
+function renderAGBReview() {
+    const pendingProjects = state.projects.filter(p =>
+        p.status === 'awaiting_agb_approval' ||
+        (p.approvalChain?.it?.status === 'approved' && p.approvalChain?.agb?.status === 'not_started')
+    );
+
+    return `
+        <div class="container" style="padding: 40px 32px;">
+            <div style="margin-bottom: 32px;">
+                <h2 style="font-size: 32px; font-weight: 900; color: var(--neutral-900); margin-bottom: 8px;">👔 AGB Final Approval Dashboard</h2>
+                <p style="color: var(--neutral-600); font-size: 16px;">Architecture Governance Board - Final project approval</p>
+            </div>
+
+            <div class="grid grid-3 mb-6">
+                ${[
+                    { icon: '📋', label: 'Pending Approval', value: pendingProjects.length, color: 'var(--orange-600)' },
+                    { icon: '✓', label: 'Approved Today', value: 0, color: 'var(--green-600)' },
+                    { icon: '📊', label: 'Portfolio Compliance', value: '87%', color: 'var(--blue-600)' }
+                ].map(stat => `
+                    <div class="card" style="padding: 24px; text-align: center;">
+                        <div style="font-size: 40px; margin-bottom: 12px;">${stat.icon}</div>
+                        <div style="font-size: 28px; font-weight: 800; color: ${stat.color}; margin-bottom: 4px;">${stat.value}</div>
+                        <div style="font-size: 13px; color: var(--neutral-600); font-weight: 600; text-transform: uppercase;">${stat.label}</div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <div class="card" style="padding: 32px;">
+                <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 24px;">Projects Awaiting AGB Approval</h3>
+
+                ${pendingProjects.length === 0 ? `
+                    <div style="text-align: center; padding: 40px; color: var(--neutral-500);">
+                        <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+                        <p style="font-size: 16px; font-weight: 600;">No projects pending approval</p>
+                    </div>
+                ` : `
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Legal</th>
+                                <th>Finance</th>
+                                <th>IT</th>
+                                <th>Overall</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pendingProjects.map(p => {
+                                const legalScore = p.approvalChain?.legal?.score || 0;
+                                const financeScore = p.approvalChain?.finance?.score || 0;
+                                const itScore = p.approvalChain?.it?.score || 0;
+                                const totalScore = legalScore + financeScore + itScore;
+                                const maxScore = 90;
+                                const compliance = Math.round((totalScore / maxScore) * 100);
+                                const meetsThreshold = compliance >= 80;
+
+                                return `
+                                <tr>
+                                    <td><strong>${p.name}</strong></td>
+                                    <td><span class="badge badge-green">${legalScore}/30</span></td>
+                                    <td><span class="badge badge-green">${financeScore}/30</span></td>
+                                    <td><span class="badge badge-green">${itScore}/30</span></td>
+                                    <td><span class="badge ${meetsThreshold ? 'badge-green' : 'badge-red'}">${compliance}%</span></td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="startAGBReview('${p.id}')">
+                                            Review
+                                        </button>
+                                    </td>
+                                </tr>
+                            `}).join('')}
+                        </tbody>
+                    </table>
+                `}
+            </div>
+
+            ${state.selectedReviewProject ? renderAGBReviewForm() : ''}
+        </div>
+    `;
+}
+
+function renderAGBReviewForm() {
+    const project = state.projects.find(p => p.id === state.selectedReviewProject);
+    if (!project) return '';
+
+    const legalScore = project.approvalChain?.legal?.score || 0;
+    const financeScore = project.approvalChain?.finance?.score || 0;
+    const itScore = project.approvalChain?.it?.score || 0;
+    const totalScore = legalScore + financeScore + itScore;
+    const maxScore = 90;
+    const compliance = Math.round((totalScore / maxScore) * 100);
+    const meetsThreshold = compliance >= 80;
+
+    return `
+        <div class="card" style="padding: 32px; border: 3px solid var(--petro-gold-600); margin-top: 24px;">
+            <h3 style="font-size: 24px; font-weight: 800; margin-bottom: 24px; color: var(--petro-green-800);">
+                👔 AGB Final Approval: ${project.name}
+            </h3>
+
+            <div style="background: var(--neutral-50); padding: 24px; border-radius: 12px; margin-bottom: 24px;">
+                <h4 style="font-weight: 800; margin-bottom: 20px;">Department Review Scores</h4>
+                <div class="grid grid-3">
+                    <div style="text-align: center; padding: 16px; background: white; border-radius: 8px;">
+                        <div style="font-size: 14px; font-weight: 600; color: var(--neutral-600); margin-bottom: 8px;">⚖️ Legal</div>
+                        <div style="font-size: 24px; font-weight: 800; color: var(--blue-600);">${legalScore}/30</div>
+                    </div>
+                    <div style="text-align: center; padding: 16px; background: white; border-radius: 8px;">
+                        <div style="font-size: 14px; font-weight: 600; color: var(--neutral-600); margin-bottom: 8px;">💰 Finance</div>
+                        <div style="font-size: 24px; font-weight: 800; color: var(--green-600);">${financeScore}/30</div>
+                    </div>
+                    <div style="text-align: center; padding: 16px; background: white; border-radius: 8px;">
+                        <div style="font-size: 14px; font-weight: 600; color: var(--neutral-600); margin-bottom: 8px;">💻 IT</div>
+                        <div style="font-size: 24px; font-weight: 800; color: var(--purple-600);">${itScore}/30</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: ${meetsThreshold ? 'var(--green-50)' : 'var(--red-50)'}; padding: 24px; border-radius: 12px; margin-bottom: 24px; border: 2px solid ${meetsThreshold ? 'var(--green-600)' : 'var(--red-600)'};">
+                <div style="font-weight: 800; font-size: 28px; color: ${meetsThreshold ? 'var(--green-700)' : 'var(--red-700)'}; margin-bottom: 8px;">
+                    Overall Compliance: ${compliance}%
+                </div>
+                <div style="font-size: 16px; font-weight: 600; color: ${meetsThreshold ? 'var(--green-600)' : 'var(--red-600)'};">
+                    ${meetsThreshold ? '✓ Meets 80% threshold for approval' : '✗ Below 80% threshold - requires justification'}
+                </div>
+                <div style="margin-top: 12px; font-size: 14px; color: var(--neutral-700);">
+                    Total Score: ${totalScore} / ${maxScore}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">AGB Decision Comments</label>
+                <textarea class="form-control" id="agb-comments" rows="4"
+                          placeholder="Enter final approval decision comments..."></textarea>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button class="btn btn-secondary" onclick="cancelReview()">Cancel</button>
+                <button class="btn btn-danger" onclick="submitAGBReview(false)">
+                    ✗ Reject Project
+                </button>
+                <button class="btn btn-primary btn-lg" onclick="submitAGBReview(true)" ${!meetsThreshold ? 'style="opacity: 0.5;"' : ''}>
+                    ✓ Approve Project
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// ============================================================================
 // EVENT HANDLERS
 // ============================================================================
+
+function loginAsUser(userId) {
+    const user = USERS.find(u => u.id === userId);
+    if (!user) return;
+
+    state.currentUser = user;
+    state.currentRole = user.role;
+    state.currentUserName = user.name;
+    render();
+}
 
 function selectRole(roleId, userName) {
     state.currentRole = roleId;
@@ -1170,7 +2034,30 @@ function selectRole(roleId, userName) {
 }
 
 function continueToDashboard() {
-    state.currentPage = 'dashboard';
+    if (!state.currentUser) return;
+
+    // Route to appropriate dashboard based on role
+    switch (state.currentRole) {
+        case USER_ROLES.LEGAL:
+            state.currentPage = 'legal-review';
+            break;
+        case USER_ROLES.FINANCE:
+            state.currentPage = 'finance-review';
+            break;
+        case USER_ROLES.IT:
+            state.currentPage = 'it-review';
+            break;
+        case USER_ROLES.AGB_MEMBER:
+            state.currentPage = 'agb-review';
+            break;
+        case USER_ROLES.PROJECT_OWNER:
+        case USER_ROLES.PMO:
+        case USER_ROLES.ADMIN:
+        default:
+            state.currentPage = 'dashboard';
+            break;
+    }
+
     render();
 }
 
@@ -1345,6 +2232,216 @@ function deleteTask(projectId, taskIndex) {
 }
 
 // ============================================================================
+// REVIEW WORKFLOW HANDLERS
+// ============================================================================
+
+function startLegalReview(projectId) {
+    state.selectedReviewProject = projectId;
+    render();
+}
+
+function updateLegalScore(criterionId, score) {
+    if (!state.selectedReviewProject) return;
+
+    const project = state.projects.find(p => p.id === state.selectedReviewProject);
+    if (!project) return;
+
+    if (!project.approvalChain) project.approvalChain = {};
+    if (!project.approvalChain.legal) project.approvalChain.legal = { status: 'pending', scores: {}, comments: '', mandatoryFields: {} };
+    if (!project.approvalChain.legal.scores) project.approvalChain.legal.scores = {};
+
+    project.approvalChain.legal.scores[criterionId] = score;
+    render();
+}
+
+function submitLegalReview() {
+    if (!state.selectedReviewProject) return;
+
+    const project = state.projects.find(p => p.id === state.selectedReviewProject);
+    if (!project) return;
+
+    const comments = document.getElementById('legal-comments')?.value || '';
+    const scores = project.approvalChain?.legal?.scores || {};
+    const totalScore = Object.values(scores).reduce((sum, val) => sum + (val || 0), 0);
+
+    // Update legal review
+    project.approvalChain.legal.status = 'approved';
+    project.approvalChain.legal.score = totalScore;
+    project.approvalChain.legal.reviewer = state.currentUser.id;
+    project.approvalChain.legal.reviewedAt = new Date().toISOString();
+    project.approvalChain.legal.comments = comments;
+
+    // Add audit trail
+    if (!project.auditTrail) project.auditTrail = [];
+    project.auditTrail.push({
+        timestamp: new Date().toISOString(),
+        userId: state.currentUser.id,
+        action: 'Legal review completed',
+        details: `Score: ${totalScore}/30 - ${totalScore >= 24 ? 'Approved' : 'Conditional'}`
+    });
+
+    // Update project status to next stage
+    project.status = 'awaiting_finance_review';
+    project.approvalChain.finance.status = 'pending';
+
+    state.selectedReviewProject = null;
+    render();
+
+    alert(`Legal review submitted successfully!\nScore: ${totalScore}/30`);
+}
+
+function startFinanceReview(projectId) {
+    state.selectedReviewProject = projectId;
+    render();
+}
+
+function updateFinanceScore(criterionId, score) {
+    if (!state.selectedReviewProject) return;
+
+    const project = state.projects.find(p => p.id === state.selectedReviewProject);
+    if (!project) return;
+
+    if (!project.approvalChain.finance.scores) project.approvalChain.finance.scores = {};
+    project.approvalChain.finance.scores[criterionId] = score;
+    render();
+}
+
+function submitFinanceReview() {
+    if (!state.selectedReviewProject) return;
+
+    const project = state.projects.find(p => p.id === state.selectedReviewProject);
+    if (!project) return;
+
+    const comments = document.getElementById('finance-comments')?.value || '';
+    const scores = project.approvalChain?.finance?.scores || {};
+    const totalScore = Object.values(scores).reduce((sum, val) => sum + (val || 0), 0);
+
+    // Update finance review
+    project.approvalChain.finance.status = 'approved';
+    project.approvalChain.finance.score = totalScore;
+    project.approvalChain.finance.reviewer = state.currentUser.id;
+    project.approvalChain.finance.reviewedAt = new Date().toISOString();
+    project.approvalChain.finance.comments = comments;
+
+    // Add audit trail
+    project.auditTrail.push({
+        timestamp: new Date().toISOString(),
+        userId: state.currentUser.id,
+        action: 'Finance review completed',
+        details: `Score: ${totalScore}/30 - ${totalScore >= 24 ? 'Approved' : 'Conditional'}`
+    });
+
+    // Update project status to next stage
+    project.status = 'awaiting_it_review';
+    project.approvalChain.it.status = 'pending';
+
+    state.selectedReviewProject = null;
+    render();
+
+    alert(`Finance review submitted successfully!\nScore: ${totalScore}/30`);
+}
+
+function startITReview(projectId) {
+    state.selectedReviewProject = projectId;
+    render();
+}
+
+function updateITScore(criterionId, score) {
+    if (!state.selectedReviewProject) return;
+
+    const project = state.projects.find(p => p.id === state.selectedReviewProject);
+    if (!project) return;
+
+    if (!project.approvalChain.it.scores) project.approvalChain.it.scores = {};
+    project.approvalChain.it.scores[criterionId] = score;
+    render();
+}
+
+function submitITReview() {
+    if (!state.selectedReviewProject) return;
+
+    const project = state.projects.find(p => p.id === state.selectedReviewProject);
+    if (!project) return;
+
+    const comments = document.getElementById('it-comments')?.value || '';
+    const scores = project.approvalChain?.it?.scores || {};
+    const totalScore = Object.values(scores).reduce((sum, val) => sum + (val || 0), 0);
+
+    // Update IT review
+    project.approvalChain.it.status = 'approved';
+    project.approvalChain.it.score = totalScore;
+    project.approvalChain.it.reviewer = state.currentUser.id;
+    project.approvalChain.it.reviewedAt = new Date().toISOString();
+    project.approvalChain.it.comments = comments;
+
+    // Add audit trail
+    project.auditTrail.push({
+        timestamp: new Date().toISOString(),
+        userId: state.currentUser.id,
+        action: 'IT review completed',
+        details: `Score: ${totalScore}/30 - ${totalScore >= 24 ? 'Approved' : 'Conditional'}`
+    });
+
+    // Update project status to next stage
+    project.status = 'awaiting_agb_approval';
+
+    state.selectedReviewProject = null;
+    render();
+
+    alert(`IT review submitted successfully!\nScore: ${totalScore}/30`);
+}
+
+function startAGBReview(projectId) {
+    state.selectedReviewProject = projectId;
+    render();
+}
+
+function submitAGBReview(approved) {
+    if (!state.selectedReviewProject) return;
+
+    const project = state.projects.find(p => p.id === state.selectedReviewProject);
+    if (!project) return;
+
+    const comments = document.getElementById('agb-comments')?.value || '';
+
+    const legalScore = project.approvalChain?.legal?.score || 0;
+    const financeScore = project.approvalChain?.finance?.score || 0;
+    const itScore = project.approvalChain?.it?.score || 0;
+    const totalScore = legalScore + financeScore + itScore;
+    const maxScore = 90;
+    const compliance = Math.round((totalScore / maxScore) * 100);
+
+    // Update AGB review
+    project.approvalChain.agb.status = approved ? 'approved' : 'rejected';
+    project.approvalChain.agb.approved = approved;
+    project.approvalChain.agb.reviewer = state.currentUser.id;
+    project.approvalChain.agb.reviewedAt = new Date().toISOString();
+    project.approvalChain.agb.comments = comments;
+    project.approvalChain.agb.complianceScore = compliance;
+
+    // Add audit trail
+    project.auditTrail.push({
+        timestamp: new Date().toISOString(),
+        userId: state.currentUser.id,
+        action: `AGB ${approved ? 'approved' : 'rejected'} project`,
+        details: `Overall compliance: ${compliance}% - ${approved ? 'Project approved for execution' : 'Project rejected'}`
+    });
+
+    // Update project status
+    project.status = approved ? 'approved' : 'rejected';
+
+    state.selectedReviewProject = null;
+    render();
+
+    alert(`Project ${approved ? 'approved' : 'rejected'} successfully!\nCompliance Score: ${compliance}%`);
+}
+
+function cancelReview() {
+    state.selectedReviewProject = null;
+    render();
+}
+
+// ============================================================================
 // EXPOSE FUNCTIONS TO WINDOW
 // ============================================================================
 
@@ -1352,6 +2449,7 @@ window.selectRole = selectRole;
 window.continueToDashboard = continueToDashboard;
 window.navigateTo = navigateTo;
 window.logout = logout;
+window.loginAsUser = loginAsUser;
 window.openProjectWizard = openProjectWizard;
 window.closeProjectWizard = closeProjectWizard;
 window.runAIAutoFill = runAIAutoFill;
@@ -1366,6 +2464,18 @@ window.addTask = addTask;
 window.updateTaskStatus = updateTaskStatus;
 window.editTask = editTask;
 window.deleteTask = deleteTask;
+window.startLegalReview = startLegalReview;
+window.updateLegalScore = updateLegalScore;
+window.submitLegalReview = submitLegalReview;
+window.startFinanceReview = startFinanceReview;
+window.updateFinanceScore = updateFinanceScore;
+window.submitFinanceReview = submitFinanceReview;
+window.startITReview = startITReview;
+window.updateITScore = updateITScore;
+window.submitITReview = submitITReview;
+window.startAGBReview = startAGBReview;
+window.submitAGBReview = submitAGBReview;
+window.cancelReview = cancelReview;
 
 // ============================================================================
 // INITIALIZE
