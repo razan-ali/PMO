@@ -1269,22 +1269,25 @@ function renderModals() {
 }
 
 function renderWizard() {
-    const stepNames = ['AI Auto-Fill', 'Basic Info', 'Review'];
+    const stepNames = ['AI Auto-Fill', 'Header & Strategic', 'Financial & Business Case', 'Scoring Dimensions', 'Implementation & Dependencies', 'Risk & Success Metrics'];
 
     let html = `
-        <div class="wizard-steps">
-            ${[1, 2, 3].map(s => `
-                <div class="wizard-step ${state.wizardStep === s ? 'active' : state.wizardStep > s ? 'completed' : ''}">
+        <div class="wizard-steps" style="justify-content: flex-start; gap: 12px; overflow-x: auto;">
+            ${[1, 2, 3, 4, 5, 6].map(s => `
+                <div class="wizard-step ${state.wizardStep === s ? 'active' : state.wizardStep > s ? 'completed' : ''}" style="flex: 0 0 auto; min-width: 120px;">
                     <div class="wizard-step-circle">${state.wizardStep > s ? '✓' : s}</div>
-                    <div class="wizard-step-label">${stepNames[s - 1]}</div>
+                    <div class="wizard-step-label" style="font-size: 10px;">${stepNames[s - 1]}</div>
                 </div>
             `).join('')}
         </div>
     `;
 
     if (state.wizardStep === 1) html += renderWizardStep1();
-    else if (state.wizardStep === 2) html += renderWizardStep2();
-    else if (state.wizardStep === 3) html += renderWizardStep3();
+    else if (state.wizardStep === 2) html += renderWizardStep2_HeaderStrategic();
+    else if (state.wizardStep === 3) html += renderWizardStep3_Financial();
+    else if (state.wizardStep === 4) html += renderWizardStep4_Scoring();
+    else if (state.wizardStep === 5) html += renderWizardStep5_Implementation();
+    else if (state.wizardStep === 6) html += renderWizardStep6_RiskSuccess();
 
     const wizardContent = document.getElementById('wizardContent');
     if (wizardContent) {
@@ -1392,6 +1395,674 @@ function renderWizardStep2() {
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="wizardPrev()">← Back</button>
             <button class="btn btn-primary" onclick="wizardNext()">Next: Review →</button>
+        </div>
+    `;
+}
+
+// ===========================================================================
+// NEW 35-CRITERIA WIZARD STEPS
+// ===========================================================================
+
+function renderWizardStep2_HeaderStrategic() {
+    const data = state.wizardData.criteriaValues || {};
+
+    return `
+        <div style="margin-bottom: 24px;">
+            <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 8px;">📋 Header & Strategic Positioning (Criteria 1-10)</h3>
+            <p style="color: var(--neutral-600); font-size: 14px;">Core identification and strategic alignment</p>
+        </div>
+
+        <div style="max-height: 500px; overflow-y: auto; padding-right: 8px;">
+            <!-- Section 1: Header & Identification (Criteria 1-5) -->
+            <div class="card" style="padding: 20px; margin-bottom: 16px;">
+                <h4 style="font-weight: 700; margin-bottom: 16px; color: var(--petro-green-800);">Section 1: Header & Identification</h4>
+
+                <div class="grid grid-2">
+                    <!-- Criterion 1: Initiative ID (Auto-generated) -->
+                    <div class="form-group">
+                        <label class="form-label">1. Initiative ID <span style="color: var(--neutral-500); font-size: 12px;">(Auto-generated)</span></label>
+                        <input type="text" class="form-control" value="${data.initiative_id || 'NEW-' + String(Date.now()).slice(-3)}" disabled>
+                    </div>
+
+                    <!-- Criterion 2: Initiative Name -->
+                    <div class="form-group">
+                        <label class="form-label required">2. Initiative Name <span style="color: var(--neutral-500); font-size: 12px;">(30-80 chars)</span></label>
+                        <input type="text" class="form-control" id="initiative-name" value="${data.initiative_name || ''}"
+                               onchange="updateFieldValue('initiative_name', this.value)" maxlength="80" placeholder="Deploy ERP Redwood UX Migration">
+                    </div>
+
+                    <!-- Criterion 3: Strategic Domain -->
+                    <div class="form-group">
+                        <label class="form-label required">3. Strategic Domain</label>
+                        <select class="form-control" onchange="updateFieldValue('strategic_domain', this.value)">
+                            <option value="">Select domain...</option>
+                            <option value="digital_transformation" ${data.strategic_domain === 'digital_transformation' ? 'selected' : ''}>Digital Transformation</option>
+                            <option value="international_expansion" ${data.strategic_domain === 'international_expansion' ? 'selected' : ''}>International Expansion</option>
+                            <option value="sustainability_esg" ${data.strategic_domain === 'sustainability_esg' ? 'selected' : ''}>Sustainability/ESG</option>
+                            <option value="core_business_excellence" ${data.strategic_domain === 'core_business_excellence' ? 'selected' : ''}>Core Business Excellence</option>
+                            <option value="ev_bio_lubricants" ${data.strategic_domain === 'ev_bio_lubricants' ? 'selected' : ''}>EV/Bio-lubricants</option>
+                            <option value="innovation_new_products" ${data.strategic_domain === 'innovation_new_products' ? 'selected' : ''}>Innovation & New Products</option>
+                        </select>
+                    </div>
+
+                    <!-- Criterion 4: Portfolio Category -->
+                    <div class="form-group">
+                        <label class="form-label required">4. Portfolio Category (BCG Matrix)</label>
+                        <select class="form-control" onchange="updateFieldValue('portfolio_category', this.value)">
+                            <option value="">Select category...</option>
+                            <option value="core_incremental" ${data.portfolio_category === 'core_incremental' ? 'selected' : ''}>Core Incremental (CI) - Target 60%</option>
+                            <option value="core_disruptive" ${data.portfolio_category === 'core_disruptive' ? 'selected' : ''}>Core Disruptive (CD) - Target 15%</option>
+                            <option value="non_core_incremental" ${data.portfolio_category === 'non_core_incremental' ? 'selected' : ''}>Non-Core Incremental (NCI) - Target 15%</option>
+                            <option value="non_core_disruptive" ${data.portfolio_category === 'non_core_disruptive' ? 'selected' : ''}>Non-Core Disruptive (NCD) - Target 10%</option>
+                        </select>
+                    </div>
+
+                    <!-- Criterion 5: Three Engines Alignment -->
+                    <div class="form-group">
+                        <label class="form-label required">5. Three Engines Alignment</label>
+                        <select class="form-control" onchange="updateFieldValue('three_engines_alignment', this.value)">
+                            <option value="">Select primary engine...</option>
+                            <option value="e1_sustain_grow_core" ${data.three_engines_alignment === 'e1_sustain_grow_core' ? 'selected' : ''}>E1: Sustain & Grow Core (60%)</option>
+                            <option value="e2_expand_inorganically" ${data.three_engines_alignment === 'e2_expand_inorganically' ? 'selected' : ''}>E2: Expand Inorganically (25%)</option>
+                            <option value="e3_base_oil_integration" ${data.three_engines_alignment === 'e3_base_oil_integration' ? 'selected' : ''}>E3: Base Oil Vertical Integration (15%)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Strategic Positioning (Criteria 6-10) -->
+            <div class="card" style="padding: 20px; margin-bottom: 16px;">
+                <h4 style="font-weight: 700; margin-bottom: 16px; color: var(--petro-green-800);">Section 2: Strategic Positioning</h4>
+
+                <div class="grid grid-2">
+                    <!-- Criterion 6: Quadrant Assignment -->
+                    <div class="form-group">
+                        <label class="form-label required">6. Quadrant Assignment</label>
+                        <select class="form-control" onchange="updateFieldValue('quadrant_assignment', this.value)">
+                            <option value="">Select quadrant...</option>
+                            <option value="quick_win" ${data.quadrant_assignment === 'quick_win' ? 'selected' : ''}>Quick-Win (0-12 months)</option>
+                            <option value="push_harder" ${data.quadrant_assignment === 'push_harder' ? 'selected' : ''}>Push-Harder (6-18 months)</option>
+                            <option value="transformational" ${data.quadrant_assignment === 'transformational' ? 'selected' : ''}>Transformational (18-36 months)</option>
+                            <option value="moonshot" ${data.quadrant_assignment === 'moonshot' ? 'selected' : ''}>Moonshot (36+ months)</option>
+                        </select>
+                    </div>
+
+                    <!-- Criterion 7: Strategic Priority -->
+                    <div class="form-group">
+                        <label class="form-label required">7. Strategic Priority</label>
+                        <select class="form-control" onchange="updateFieldValue('strategic_priority', this.value)">
+                            <option value="">Select priority...</option>
+                            <option value="p1_critical" ${data.strategic_priority === 'p1_critical' ? 'selected' : ''}>P1 Critical (CEO/Board)</option>
+                            <option value="p2_high" ${data.strategic_priority === 'p2_high' ? 'selected' : ''}>P2 High (Trio)</option>
+                            <option value="p3_medium" ${data.strategic_priority === 'p3_medium' ? 'selected' : ''}>P3 Medium (CITO)</option>
+                            <option value="p4_low" ${data.strategic_priority === 'p4_low' ? 'selected' : ''}>P4 Low (Owner)</option>
+                        </select>
+                    </div>
+
+                    <!-- Criterion 8: Year 1 Tier Assignment -->
+                    <div class="form-group">
+                        <label class="form-label required">8. Year 1 Tier Assignment</label>
+                        <select class="form-control" onchange="updateFieldValue('year1_tier', this.value)">
+                            <option value="">Select tier...</option>
+                            <option value="tier_1a" ${data.year1_tier === 'tier_1a' ? 'selected' : ''}>Tier 1A - Catastrophic Dependency</option>
+                            <option value="tier_1b" ${data.year1_tier === 'tier_1b' ? 'selected' : ''}>Tier 1B - Oracle AI Quick Win</option>
+                            <option value="tier_1c" ${data.year1_tier === 'tier_1c' ? 'selected' : ''}>Tier 1C - Digital Quick Win</option>
+                            <option value="tier_1d" ${data.year1_tier === 'tier_1d' ? 'selected' : ''}>Tier 1D - Sustainability Quick Win</option>
+                            <option value="tier_2" ${data.year1_tier === 'tier_2' ? 'selected' : ''}>Tier 2 - Foundational Capability</option>
+                            <option value="contingent" ${data.year1_tier === 'contingent' ? 'selected' : ''}>Contingent - Q3-Q4 Activation</option>
+                            <option value="deferred" ${data.year1_tier === 'deferred' ? 'selected' : ''}>Deferred - Year 2-5</option>
+                        </select>
+                    </div>
+
+                    <!-- Criterion 9: Aramco Competitive Response -->
+                    <div class="form-group">
+                        <label class="form-label required">9. Aramco Competitive Response</label>
+                        <select class="form-control" onchange="updateFieldValue('aramco_response', this.value)">
+                            <option value="">Select response type...</option>
+                            <option value="offensive" ${data.aramco_response === 'offensive' ? 'selected' : ''}>Offensive - Preemptive Capture</option>
+                            <option value="defensive" ${data.aramco_response === 'defensive' ? 'selected' : ''}>Defensive - Market Share Protection</option>
+                            <option value="neutral" ${data.aramco_response === 'neutral' ? 'selected' : ''}>Neutral - Independent Value</option>
+                        </select>
+                    </div>
+
+                    <!-- Criterion 10: BCG i2i Dimension Impact -->
+                    <div class="form-group">
+                        <label class="form-label required">10. BCG i2i Points Contribution</label>
+                        <input type="number" class="form-control" value="${data.bcg_i2i_points || 0}" min="0" max="20" step="1"
+                               onchange="updateFieldValue('bcg_i2i_points', parseInt(this.value))"
+                               placeholder="Expected points toward 59→80 journey">
+                        <small style="font-size: 11px; color: var(--neutral-600);">Current baseline: 59/100, Target: 80+</small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Aramco Competitive Impact Description</label>
+                    <textarea class="form-control" rows="3" onchange="updateFieldValue('aramco_impact_description', this.value)"
+                              placeholder="Describe specific competitive impact vs. Aramco-Valvoline integration...">${data.aramco_impact_description || ''}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="wizardPrev()">← Back</button>
+            <button class="btn btn-primary" onclick="wizardNext()">Next: Financial & Business Case →</button>
+        </div>
+    `;
+}
+
+function renderWizardStep3_Financial() {
+    const data = state.wizardData.criteriaValues || {};
+
+    return `
+        <div style="margin-bottom: 24px;">
+            <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 8px;">💰 Financial & Business Case (Criteria 17-23)</h3>
+            <p style="color: var(--neutral-600); font-size: 14px;">Investment, ROI, and financial validations</p>
+        </div>
+
+        <div style="max-height: 500px; overflow-y: auto; padding-right: 8px;">
+            <div class="card" style="padding: 20px; margin-bottom: 16px;">
+                <h4 style="font-weight: 700; margin-bottom: 16px; color: var(--petro-green-800);">Investment & Timeline</h4>
+
+                <div class="grid grid-3">
+                    <!-- Criterion 17: Investment Required -->
+                    <div class="form-group">
+                        <label class="form-label required">17. Total Investment (SAR M)</label>
+                        <input type="number" class="form-control" value="${data.investment_total || ''}" step="0.1"
+                               onchange="updateFieldValue('investment_total', parseFloat(this.value))"
+                               placeholder="12.5">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Year 1 Allocation (SAR M)</label>
+                        <input type="number" class="form-control" value="${data.investment_year1 || ''}" step="0.1"
+                               onchange="updateFieldValue('investment_year1', parseFloat(this.value))">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Year 2+ Allocation (SAR M)</label>
+                        <input type="number" class="form-control" value="${data.investment_year2plus || ''}" step="0.1"
+                               onchange="updateFieldValue('investment_year2plus', parseFloat(this.value))">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">CAPEX (SAR M)</label>
+                        <input type="number" class="form-control" value="${data.investment_capex || ''}" step="0.1"
+                               onchange="updateFieldValue('investment_capex', parseFloat(this.value))">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">OPEX (SAR M)</label>
+                        <input type="number" class="form-control" value="${data.investment_opex || ''}" step="0.1"
+                               onchange="updateFieldValue('investment_opex', parseFloat(this.value))">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Contingency (SAR M)</label>
+                        <input type="number" class="form-control" value="${data.investment_contingency || ''}" step="0.1"
+                               onchange="updateFieldValue('investment_contingency', parseFloat(this.value))"
+                               placeholder="10-15% of total">
+                    </div>
+
+                    <!-- Criterion 18: Timeline -->
+                    <div class="form-group">
+                        <label class="form-label required">18. Total Duration (Months)</label>
+                        <input type="number" class="form-control" value="${data.timeline_months || ''}"
+                               onchange="updateFieldValue('timeline_months', parseInt(this.value))">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">First Value Realization Date</label>
+                        <input type="date" class="form-control" value="${data.first_value_date || ''}"
+                               onchange="updateFieldValue('first_value_date', this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Full ROI Realization Date</label>
+                        <input type="date" class="form-control" value="${data.full_roi_date || ''}"
+                               onchange="updateFieldValue('full_roi_date', this.value)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 20px; margin-bottom: 16px;">
+                <h4 style="font-weight: 700; margin-bottom: 16px; color: var(--petro-green-800);">Financial Gates (Must Pass)</h4>
+
+                <div class="grid grid-2">
+                    <!-- Criterion 21: IRR -->
+                    <div class="form-group">
+                        <label class="form-label required">21. IRR - Base Case (%)</label>
+                        <input type="number" class="form-control" value="${data.irr_base || ''}" step="0.1"
+                               onchange="updateFieldValue('irr_base', parseFloat(this.value))"
+                               placeholder="Must exceed 15% hurdle">
+                        ${(data.irr_base && data.irr_base < 15) ? '<small style="color: var(--red-600);">⚠ Below 15% hurdle - CFO exception required</small>' : ''}
+                        ${(data.irr_base && data.irr_base >= 15) ? '<small style="color: var(--green-600);">✓ Exceeds 15% hurdle rate</small>' : ''}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">IRR - Conservative (%)</label>
+                        <input type="number" class="form-control" value="${data.irr_conservative || ''}" step="0.1"
+                               onchange="updateFieldValue('irr_conservative', parseFloat(this.value))">
+                    </div>
+
+                    <!-- Criterion 22: Payback Period -->
+                    <div class="form-group">
+                        <label class="form-label required">22. Simple Payback (Years)</label>
+                        <input type="number" class="form-control" value="${data.payback_simple || ''}" step="0.1"
+                               onchange="updateFieldValue('payback_simple', parseFloat(this.value))">
+                        ${(data.quadrant_assignment === 'quick_win' && data.payback_simple > 1.5) ? '<small style="color: var(--red-600);">⚠ Quick-Wins must have <18mo payback</small>' : ''}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">Discounted Payback @ 12% (Years)</label>
+                        <input type="number" class="form-control" value="${data.payback_discounted || ''}" step="0.1"
+                               onchange="updateFieldValue('payback_discounted', parseFloat(this.value))">
+                    </div>
+
+                    <!-- Criterion 23: NPV -->
+                    <div class="form-group">
+                        <label class="form-label required">23. NPV @ 12% WACC (SAR M)</label>
+                        <input type="number" class="form-control" value="${data.npv_5year || ''}" step="0.1"
+                               onchange="updateFieldValue('npv_5year', parseFloat(this.value))"
+                               placeholder="5-year projection">
+                        ${(data.npv_5year && data.npv_5year <= 0) ? '<small style="color: var(--red-600);">⚠ Negative NPV - CFO exception required</small>' : ''}
+                        ${(data.npv_5year && data.npv_5year > 0) ? '<small style="color: var(--green-600);">✓ Positive NPV</small>' : ''}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">NPV Sensitivity - Investment +20% (SAR M)</label>
+                        <input type="number" class="form-control" value="${data.npv_sensitivity_investment || ''}" step="0.1"
+                               onchange="updateFieldValue('npv_sensitivity_investment', parseFloat(this.value))">
+                    </div>
+
+                    <!-- Criterion 20: Expected ROI -->
+                    <div class="form-group">
+                        <label class="form-label required">20. Year 1 ROI (SAR M)</label>
+                        <input type="number" class="form-control" value="${data.roi_year1 || ''}" step="0.1"
+                               onchange="updateFieldValue('roi_year1', parseFloat(this.value))">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Year 3 Cumulative ROI (SAR M)</label>
+                        <input type="number" class="form-control" value="${data.roi_year3 || ''}" step="0.1"
+                               onchange="updateFieldValue('roi_year3', parseFloat(this.value))">
+                    </div>
+
+                    <!-- Criterion 19: Resource Requirements -->
+                    <div class="form-group">
+                        <label class="form-label required">19. Total FTE Required</label>
+                        <input type="number" class="form-control" value="${data.total_fte || ''}"
+                               onchange="updateFieldValue('total_fte', parseInt(this.value))">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Peak FTE</label>
+                        <input type="number" class="form-control" value="${data.peak_fte || ''}"
+                               onchange="updateFieldValue('peak_fte', parseInt(this.value))">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="wizardPrev()">← Back</button>
+            <button class="btn btn-primary" onclick="wizardNext()">Next: Scoring Dimensions →</button>
+        </div>
+    `;
+}
+
+function renderWizardStep4_Scoring() {
+    const data = state.wizardData.criteriaValues || {};
+
+    // Calculate D1-D6 totals
+    const d1Total = (parseInt(data.d1_market_position) || 0) + (parseInt(data.d1_revenue_growth) || 0) +
+                    (parseInt(data.d1_competitive_diff) || 0) + (parseInt(data.d1_strategic_alignment) || 0) +
+                    (parseInt(data.d1_aramco_defense) || 0);
+    const d2Total = (parseInt(data.d2_npv_score) || 0) + (parseInt(data.d2_irr_score) || 0) +
+                    (parseInt(data.d2_payback_score) || 0) + (parseInt(data.d2_revenue_score) || 0) +
+                    (parseInt(data.d2_cost_savings_score) || 0);
+    const d3Total = (parseInt(data.d3_technical_readiness) || 0) + (parseInt(data.d3_resource_availability) || 0) +
+                    (parseInt(data.d3_timeline_realism) || 0) + (parseInt(data.d3_dependency_mgmt) || 0);
+    const d4Total = (parseInt(data.d4_technical_risk) || 0) + (parseInt(data.d4_market_risk) || 0) +
+                    (parseInt(data.d4_execution_risk) || 0);
+    const d5Total = (parseInt(data.d5_tech_novelty) || 0) + (parseInt(data.d5_business_model) || 0) +
+                    (parseInt(data.d5_i2i_advancement) || 0);
+
+    // D6 Composite (Scenario B weights)
+    const d6Composite = (d1Total * 0.35) + (d2Total * 0.25) + (d3Total * 0.20) + (d4Total * 0.15) + (d5Total * 0.15);
+
+    return `
+        <div style="margin-bottom: 24px;">
+            <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 8px;">📊 Scoring Dimensions (Criteria 11-16)</h3>
+            <p style="color: var(--neutral-600); font-size: 14px;">Framework V4.0 dimensional scoring (0-5 scale per criterion)</p>
+        </div>
+
+        <div style="max-height: 500px; overflow-y: auto; padding-right: 8px;">
+            <!-- D1: Strategic Impact (Criterion 11) -->
+            <div class="card" style="padding: 20px; margin-bottom: 16px; border-left: 4px solid var(--blue-600);">
+                <h4 style="font-weight: 700; margin-bottom: 12px;">11. D1: Strategic Impact (0-25 pts, Weight: 35%)</h4>
+                <div class="grid grid-2" style="gap: 12px;">
+                    ${[
+                        {id: 'd1_market_position', label: 'Market Position', hint: '0=No impact, 5=Transformational'},
+                        {id: 'd1_revenue_growth', label: 'Revenue Growth', hint: '0=<1M, 5=>75M SAR'},
+                        {id: 'd1_competitive_diff', label: 'Competitive Differentiation', hint: '0=None, 5=Unique moat'},
+                        {id: 'd1_strategic_alignment', label: 'Strategic Alignment', hint: '0=Misaligned, 5=Foundational'},
+                        {id: 'd1_aramco_defense', label: 'Aramco Defense Value', hint: '0=None, 5=Offensive counter'}
+                    ].map(item => `
+                        <div>
+                            <label style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">${item.label}</label>
+                            <select class="form-control" onchange="updateFieldValue('${item.id}', parseInt(this.value))">
+                                ${[0,1,2,3,4,5].map(v => `<option value="${v}" ${(data[item.id] == v) ? 'selected' : ''}>${v}</option>`).join('')}
+                            </select>
+                            <small style="font-size: 11px; color: var(--neutral-600);">${item.hint}</small>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="margin-top: 12px; padding: 12px; background: var(--blue-50); border-radius: 6px;">
+                    <strong>D1 Total: ${d1Total}/25 points</strong>
+                </div>
+            </div>
+
+            <!-- D2: Financial Impact (Criterion 12) -->
+            <div class="card" style="padding: 20px; margin-bottom: 16px; border-left: 4px solid var(--green-600);">
+                <h4 style="font-weight: 700; margin-bottom: 12px;">12. D2: Financial Impact (0-25 pts, Weight: 25%)</h4>
+                <div class="grid grid-2" style="gap: 12px;">
+                    ${[
+                        {id: 'd2_npv_score', label: 'NPV @ 12% WACC', hint: '0=Negative, 5=>75M SAR'},
+                        {id: 'd2_irr_score', label: 'IRR', hint: '0=<15%, 5=>50%'},
+                        {id: 'd2_payback_score', label: 'Payback Period', hint: '0=>5yr, 5=<1yr'},
+                        {id: 'd2_revenue_score', label: 'Revenue Potential', hint: 'Same as NPV bands'},
+                        {id: 'd2_cost_savings_score', label: 'Cost Savings', hint: '0=None, 5=>25M SAR'}
+                    ].map(item => `
+                        <div>
+                            <label style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">${item.label}</label>
+                            <select class="form-control" onchange="updateFieldValue('${item.id}', parseInt(this.value))">
+                                ${[0,1,2,3,4,5].map(v => `<option value="${v}" ${(data[item.id] == v) ? 'selected' : ''}>${v}</option>`).join('')}
+                            </select>
+                            <small style="font-size: 11px; color: var(--neutral-600);">${item.hint}</small>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="margin-top: 12px; padding: 12px; background: var(--green-50); border-radius: 6px;">
+                    <strong>D2 Total: ${d2Total}/25 points</strong>
+                </div>
+            </div>
+
+            <!-- D3: Execution Feasibility (Criterion 13) -->
+            <div class="card" style="padding: 20px; margin-bottom: 16px; border-left: 4px solid var(--purple-600);">
+                <h4 style="font-weight: 700; margin-bottom: 12px;">13. D3: Execution Feasibility (0-20 pts, Weight: 20%)</h4>
+                <div class="grid grid-2" style="gap: 12px;">
+                    ${[
+                        {id: 'd3_technical_readiness', label: 'Technical Readiness (TRL)', hint: 'TRL 1-3=1pt, TRL 9=5pt'},
+                        {id: 'd3_resource_availability', label: 'Resource Availability', hint: '0=Major gaps, 5=Fully available'},
+                        {id: 'd3_timeline_realism', label: 'Timeline Realism', hint: '0=Unrealistic, 5=Proven'},
+                        {id: 'd3_dependency_mgmt', label: 'Dependency Management', hint: '0=Critical blockers, 5=No blockers'}
+                    ].map(item => `
+                        <div>
+                            <label style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">${item.label}</label>
+                            <select class="form-control" onchange="updateFieldValue('${item.id}', parseInt(this.value))">
+                                ${[0,1,2,3,4,5].map(v => `<option value="${v}" ${(data[item.id] == v) ? 'selected' : ''}>${v}</option>`).join('')}
+                            </select>
+                            <small style="font-size: 11px; color: var(--neutral-600);">${item.hint}</small>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="margin-top: 12px; padding: 12px; background: var(--purple-50); border-radius: 6px;">
+                    <strong>D3 Total: ${d3Total}/20 points</strong>
+                </div>
+            </div>
+
+            <!-- D4: Risk Management (Criterion 14) -->
+            <div class="card" style="padding: 20px; margin-bottom: 16px; border-left: 4px solid var(--orange-600);">
+                <h4 style="font-weight: 700; margin-bottom: 12px;">14. D4: Risk Management (0-15 pts, Weight: 15%)</h4>
+                <p style="font-size: 12px; color: var(--neutral-600); margin-bottom: 12px;">Lower risk = Higher score</p>
+                <div class="grid grid-3" style="gap: 12px;">
+                    ${[
+                        {id: 'd4_technical_risk', label: 'Technical Risk', hint: '5=Negligible, 0=Catastrophic'},
+                        {id: 'd4_market_risk', label: 'Market Risk', hint: '5=Negligible, 0=Catastrophic'},
+                        {id: 'd4_execution_risk', label: 'Execution Risk', hint: '5=Negligible, 0=Catastrophic'}
+                    ].map(item => `
+                        <div>
+                            <label style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">${item.label}</label>
+                            <select class="form-control" onchange="updateFieldValue('${item.id}', parseInt(this.value))">
+                                ${[0,1,2,3,4,5].map(v => `<option value="${v}" ${(data[item.id] == v) ? 'selected' : ''}>${v}</option>`).join('')}
+                            </select>
+                            <small style="font-size: 11px; color: var(--neutral-600);">${item.hint}</small>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="margin-top: 12px; padding: 12px; background: var(--orange-50); border-radius: 6px;">
+                    <strong>D4 Total: ${d4Total}/15 points</strong>
+                </div>
+            </div>
+
+            <!-- D5: Innovation Index (Criterion 15) -->
+            <div class="card" style="padding: 20px; margin-bottom: 16px; border-left: 4px solid var(--petro-gold-600);">
+                <h4 style="font-weight: 700; margin-bottom: 12px;">15. D5: Innovation Index (0-15 pts, Weight: 15%)</h4>
+                <div class="grid grid-3" style="gap: 12px;">
+                    ${[
+                        {id: 'd5_tech_novelty', label: 'Technology Novelty', hint: '0=Commodity, 5=Industry first'},
+                        {id: 'd5_business_model', label: 'Business Model Innovation', hint: '0=Existing, 5=New model'},
+                        {id: 'd5_i2i_advancement', label: 'i2i Advancement Potential', hint: '0=No impact, 5=>6pts'}
+                    ].map(item => `
+                        <div>
+                            <label style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">${item.label}</label>
+                            <select class="form-control" onchange="updateFieldValue('${item.id}', parseInt(this.value))">
+                                ${[0,1,2,3,4,5].map(v => `<option value="${v}" ${(data[item.id] == v) ? 'selected' : ''}>${v}</option>`).join('')}
+                            </select>
+                            <small style="font-size: 11px; color: var(--neutral-600);">${item.hint}</small>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="margin-top: 12px; padding: 12px; background: var(--petro-gold-50); border-radius: 6px;">
+                    <strong>D5 Total: ${d5Total}/15 points</strong>
+                </div>
+            </div>
+
+            <!-- D6: Total Composite (Criterion 16) -->
+            <div class="card" style="padding: 20px; background: var(--petro-green-50); border: 2px solid var(--petro-green-700);">
+                <h4 style="font-weight: 800; margin-bottom: 12px; font-size: 18px;">16. D6: Total Composite Score (0-100 pts)</h4>
+                <div style="font-size: 32px; font-weight: 900; color: var(--petro-green-800); margin: 16px 0;">
+                    ${d6Composite.toFixed(1)} / 100
+                </div>
+                <div style="font-size: 13px; color: var(--neutral-700);">
+                    Scenario B (Balanced Portfolio) Weights:<br>
+                    D1 (35%) = ${(d1Total * 0.35).toFixed(1)} |
+                    D2 (25%) = ${(d2Total * 0.25).toFixed(1)} |
+                    D3 (20%) = ${(d3Total * 0.20).toFixed(1)} |
+                    D4 (15%) = ${(d4Total * 0.15).toFixed(1)} |
+                    D5 (15%) = ${(d5Total * 0.15).toFixed(1)}
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="wizardPrev()">← Back</button>
+            <button class="btn btn-primary" onclick="wizardNext()">Next: Implementation & Dependencies →</button>
+        </div>
+    `;
+}
+
+function renderWizardStep5_Implementation() {
+    const data = state.wizardData.criteriaValues || {};
+
+    return `
+        <div style="margin-bottom: 24px;">
+            <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 8px;">🚀 Implementation & Dependencies (Criteria 24-30)</h3>
+            <p style="color: var(--neutral-600); font-size: 14px;">Execution plan, milestones, and critical dependencies</p>
+        </div>
+
+        <div style="max-height: 500px; overflow-y: auto; padding-right: 8px;">
+            <!-- Implementation Plan (Criteria 24-27) -->
+            <div class="card" style="padding: 20px; margin-bottom: 16px;">
+                <h4 style="font-weight: 700; margin-bottom: 16px; color: var(--petro-green-800);">Implementation Plan</h4>
+
+                <div class="form-group">
+                    <label class="form-label required">24. Phase 1 Plan (Objectives & Key Activities)</label>
+                    <textarea class="form-control" rows="4" onchange="updateFieldValue('phase1_plan', this.value)"
+                              placeholder="List primary objectives and key activities for Phase 1...">${data.phase1_plan || ''}</textarea>
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label class="form-label">25. Phase 2 Plan (if >6 months)</label>
+                        <textarea class="form-control" rows="3" onchange="updateFieldValue('phase2_plan', this.value)"
+                                  placeholder="Phase 2 objectives...">${data.phase2_plan || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">26. Phase 3 Plan (if >12 months)</label>
+                        <textarea class="form-control" rows="3" onchange="updateFieldValue('phase3_plan', this.value)"
+                                  placeholder="Phase 3 objectives...">${data.phase3_plan || ''}</textarea>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">27. Key Milestones & Gate Checkpoints</label>
+                    <textarea class="form-control" rows="4" onchange="updateFieldValue('key_milestones', this.value)"
+                              placeholder="Gate 0: Concept approval (Month 0)\nGate 1: Planning complete (Month 2)\nGate 2: Development ready (Month 6)\nGate 3: Pilot review (Month 10)\nGate 4: Deployment (Month 12)">${data.key_milestones || ''}</textarea>
+                </div>
+            </div>
+
+            <!-- Dependencies (Criteria 28-30) -->
+            <div class="card" style="padding: 20px; margin-bottom: 16px; border: 2px solid var(--red-500);">
+                <h4 style="font-weight: 700; margin-bottom: 16px; color: var(--red-700);">Critical Dependencies & Blockers</h4>
+
+                <div class="form-group">
+                    <label class="form-label required">28. Critical Prerequisites (Strategic, Financial, Governance)</label>
+                    <textarea class="form-control" rows="3" onchange="updateFieldValue('critical_prerequisites', this.value)"
+                              placeholder="List must-have conditions before initiative start...">${data.critical_prerequisites || ''}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">29. Technical Dependencies</label>
+                    <textarea class="form-control" rows="4" onchange="updateFieldValue('technical_dependencies', this.value)"
+                              placeholder="Platform/System dependencies:\n- NEW-001: Oracle Redwood UX (Dec 31, 2025)\n- NEW-003: MiRA Data Quality ≥90% (Mar 31, 2026)\nData dependencies:\nIntegration dependencies:">${data.technical_dependencies || ''}</textarea>
+                    <small style="color: var(--red-600); font-weight: 600;">⚠ Check for catastrophic dependencies: NEW-001, NEW-002, NEW-003</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">30. Organizational Dependencies</label>
+                    <textarea class="form-control" rows="4" onchange="updateFieldValue('organizational_dependencies', this.value)"
+                              placeholder="Talent dependencies:\n- NEW-002: Data Scientist Recruitment (4 roles, Jan 31, 2026)\nGovernance dependencies:\nStakeholder dependencies:">${data.organizational_dependencies || ''}</textarea>
+                </div>
+
+                <div style="background: var(--red-50); padding: 12px; border-radius: 6px; border-left: 4px solid var(--red-600);">
+                    <strong style="color: var(--red-700);">Catastrophic Dependency Check:</strong>
+                    <ul style="margin: 8px 0; padding-left: 20px; font-size: 13px;">
+                        <li>NEW-001: Oracle Redwood UX Migration (Dec 31, 2025 deadline)</li>
+                        <li>NEW-002: Data Scientist Recruitment (4 roles, Jan 31, 2026 deadline)</li>
+                        <li>NEW-003: MiRA Data Quality ≥90% (Mar 31, 2026 deadline)</li>
+                    </ul>
+                    <small>If this initiative depends on any above, it escalates to CEO daily management</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="wizardPrev()">← Back</button>
+            <button class="btn btn-primary" onclick="wizardNext()">Next: Risk & Success Metrics →</button>
+        </div>
+    `;
+}
+
+function renderWizardStep6_RiskSuccess() {
+    const data = state.wizardData.criteriaValues || {};
+
+    return `
+        <div style="margin-bottom: 24px;">
+            <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 8px;">⚠️ Risk Assessment & Success Metrics (Criteria 31-35)</h3>
+            <p style="color: var(--neutral-600); font-size: 14px;">Risk management, success criteria, and final recommendation</p>
+        </div>
+
+        <div style="max-height: 500px; overflow-y: auto; padding-right: 8px;">
+            <!-- Risk Assessment (Criteria 31-33) -->
+            <div class="card" style="padding: 20px; margin-bottom: 16px;">
+                <h4 style="font-weight: 700; margin-bottom: 16px; color: var(--orange-700);">Risk Assessment</h4>
+
+                <div class="form-group">
+                    <label class="form-label required">31. Top 3 Risks (Probability × Impact)</label>
+                    <textarea class="form-control" rows="5" onchange="updateFieldValue('top3_risks', this.value)"
+                              placeholder="Risk 1: [Description] | Probability: [LOW/MEDIUM/HIGH] | Impact: [SAR X or Y months delay] | Mitigation: [...]\n\nRisk 2: [...]\n\nRisk 3: [...]">${data.top3_risks || ''}</textarea>
+                    <small>Format per risk: Description | Probability | Impact | Mitigation strategy</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">32. Opportunity Scenarios (Upside potential)</label>
+                    <textarea class="form-control" rows="3" onchange="updateFieldValue('opportunity_scenarios', this.value)"
+                              placeholder="Opportunity 1: Market expansion if successful - +SAR 15M potential\nOpportunity 2: [...]">${data.opportunity_scenarios || ''}</textarea>
+                    <small style="color: var(--green-600);">✓ Informational only - adds +5% score uplift if complete</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">33. Contingency Plans & Kill Criteria</label>
+                    <textarea class="form-control" rows="4" onchange="updateFieldValue('contingency_plans', this.value)"
+                              placeholder="IF: [Scenario] THEN: [Action plan]\nKill Criteria:\n- Cost overrun >50% of budget\n- Strategic fit lost due to market changes\nExit Strategy: [...]">${data.contingency_plans || ''}</textarea>
+                </div>
+            </div>
+
+            <!-- Success Metrics (Criterion 34) -->
+            <div class="card" style="padding: 20px; margin-bottom: 16px; border-left: 4px solid var(--green-600);">
+                <h4 style="font-weight: 700; margin-bottom: 16px; color: var(--green-700);">34. Success Criteria (KPIs)</h4>
+
+                <div class="form-group">
+                    <label class="form-label required">Business Outcome Metrics</label>
+                    <textarea class="form-control" rows="3" onchange="updateFieldValue('business_kpis', this.value)"
+                              placeholder="ROI: ≥SAR 25M by Year 3\nMarket Share: +5% in target segment\nOperational Efficiency: 30% time reduction">${data.business_kpis || ''}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">BCG i2i Advancement Metrics</label>
+                    <textarea class="form-control" rows="2" onchange="updateFieldValue('bcg_i2i_kpis', this.value)"
+                              placeholder="Domain 4 (Portfolio Management): +3 points\nDomain 9 (Technology & Data): +2 points">${data.bcg_i2i_kpis || ''}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">Minimum Viable Success (MVS) for Gate 3</label>
+                    <textarea class="form-control" rows="3" onchange="updateFieldValue('mvs_criteria', this.value)"
+                              placeholder="Metric 1: Customer adoption ≥60%\nMetric 2: Technical performance ≥90% uptime\nMetric 3: Cost within ±10% of budget\nIf below: PIVOT or TERMINATE">${data.mvs_criteria || ''}</textarea>
+                    <small style="color: var(--orange-600);">⚠ GATE REQUIREMENT - Must define clear go/no-go thresholds</small>
+                </div>
+            </div>
+
+            <!-- Recommendation (Criterion 35) -->
+            <div class="card" style="padding: 20px; background: var(--petro-gold-50); border: 2px solid var(--petro-gold-600);">
+                <h4 style="font-weight: 800; margin-bottom: 16px; font-size: 18px; color: var(--petro-green-900);">35. Recommendation & Board Priority</h4>
+
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label class="form-label required">Recommendation Decision</label>
+                        <select class="form-control" onchange="updateFieldValue('recommendation_decision', this.value)">
+                            <option value="">Select...</option>
+                            <option value="accelerate" ${data.recommendation_decision === 'accelerate' ? 'selected' : ''}>ACCELERATE - Increase resources</option>
+                            <option value="keep" ${data.recommendation_decision === 'keep' ? 'selected' : ''}>KEEP - Proceed as planned</option>
+                            <option value="keep_conditional" ${data.recommendation_decision === 'keep_conditional' ? 'selected' : ''}>KEEP WITH CONDITIONS</option>
+                            <option value="defer" ${data.recommendation_decision === 'defer' ? 'selected' : ''}>DEFER - Move to Year 2+</option>
+                            <option value="remove" ${data.recommendation_decision === 'remove' ? 'selected' : ''}>REMOVE - Eliminate from portfolio</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Board Priority</label>
+                        <select class="form-control" onchange="updateFieldValue('board_priority', this.value)">
+                            <option value="">Select...</option>
+                            <option value="p1_critical" ${data.board_priority === 'p1_critical' ? 'selected' : ''}>P1 Critical (Board attention)</option>
+                            <option value="p2_high" ${data.board_priority === 'p2_high' ? 'selected' : ''}>P2 High (Trio oversight)</option>
+                            <option value="p3_medium" ${data.board_priority === 'p3_medium' ? 'selected' : ''}>P3 Medium (CITO oversight)</option>
+                            <option value="p4_low" ${data.board_priority === 'p4_low' ? 'selected' : ''}>P4 Low (Owner oversight)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">Recommendation Rationale (Why critical now?)</label>
+                    <textarea class="form-control" rows="4" onchange="updateFieldValue('recommendation_rationale', this.value)"
+                              placeholder="Strategic imperative: [...]\nCompetitive urgency: Aramco-Valvoline timeline\nFinancial attractiveness: IRR X%, Payback Y years\nExecution confidence: [...]\nRisk profile: [...]">${data.recommendation_rationale || ''}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">CEO Talking Points (3 key messages)</label>
+                    <textarea class="form-control" rows="3" onchange="updateFieldValue('ceo_talking_points', this.value)"
+                              placeholder="1. Why this matters to Petrolube's future\n2. How this defends against Aramco-Valvoline\n3. Financial value proposition">${data.ceo_talking_points || ''}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Executive Sponsor</label>
+                    <input type="text" class="form-control" value="${data.executive_sponsor || ''}"
+                           onchange="updateFieldValue('executive_sponsor', this.value)" placeholder="Name, Title">
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="wizardPrev()">← Back</button>
+            <button class="btn btn-gold btn-lg" onclick="submitWizard()">✓ Submit Initiative for Scoring</button>
         </div>
     `;
 }
