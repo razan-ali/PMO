@@ -3118,6 +3118,10 @@ const state = {
     wizardStep: 1,
     wizardData: { criteriaValues: {} },
     showDescriptionBox: true,
+    aiProcessing: false,
+    aiComplete: false,
+    selectedScenario: 'A',
+    selectedPMOProject: null,
     store: new DataStore(),
     // Template Builder State
     templateBuilderMode: null, // null, 'create', 'edit'
@@ -8229,6 +8233,14 @@ window.runPrioritization = runPrioritization;
 window.viewProject = viewProject;
 window.navigateToDashboardPage = navigateToDashboardPage;
 window.initializeDashboardCharts = initializeDashboardCharts;
+// PMO Manager functions
+window.selectPMOProject = selectPMOProject;
+window.openAddTaskModal = openAddTaskModal;
+window.addTask = addTask;
+window.updateTaskStatus = updateTaskStatus;
+window.editTask = editTask;
+window.deleteTask = deleteTask;
+window.updateMilestoneStatus = updateMilestoneStatus;
 
 // Initialize charts if on dashboard page
 if (state.currentPage === 'dashboard') {
