@@ -5465,8 +5465,15 @@ function renderWizard() {
 
 function renderWizardStep1() {
     return `
-        <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 20px;">Step 1: AI-Powered Description</h3>
-        
+        <div style="margin-bottom: 32px;">
+            <h3 style="font-size: 20px; font-weight: 800; color: var(--neutral-900); margin-bottom: 8px;">
+                🤖 Step 1: AI-Powered Auto-Fill (Optional)
+            </h3>
+            <p style="color: var(--neutral-600); font-size: 14px;">
+                Let AI intelligently populate all 35 criteria, or skip and enter data manually
+            </p>
+        </div>
+
         ${state.showDescriptionBox ? `
             <div class="agent-panel">
                 <div style="display: flex; align-items: start; gap: 16px; margin-bottom: 16px;">
@@ -5474,20 +5481,22 @@ function renderWizardStep1() {
                     <div>
                         <h4 style="font-size: 16px; font-weight: 800; color: var(--blue-600); margin-bottom: 8px;">AI Auto-Fill Assistant</h4>
                         <p style="font-size: 14px; color: var(--neutral-700);">
-                            Describe your initiative and our AI will intelligently populate all 35 criteria based on pattern recognition and historical data analysis.
+                            Describe your initiative in natural language and AI will intelligently populate all 35 criteria based on pattern recognition and historical data analysis.
                         </p>
                     </div>
                 </div>
-                
+
                 <div class="form-group">
-                    <label class="form-label required">Project Description</label>
-                    <textarea class="form-control" id="wizard-description" rows="6" 
+                    <label class="form-label">Project Description (Optional)</label>
+                    <textarea class="form-control" id="wizard-description" rows="6"
                               placeholder="Example: Oracle ERP Redwood UX migration. Critical dependency blocking 91 AI agents. Budget: 12.5M SAR, Timeline: 14 months, Expected IRR: 42%. High strategic priority for Q1 2025 delivery...">${state.wizardData.description || ''}</textarea>
                 </div>
-                
-                <button class="btn btn-gold btn-block btn-lg" onclick="runAIAutoFill()">
-                    <span>✨</span> Auto-Fill All 35 Criteria
-                </button>
+
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn btn-gold btn-lg" style="flex: 1;" onclick="runAIAutoFill()" ${!document.getElementById('wizard-description')?.value?.trim() && !state.wizardData.description ? 'disabled' : ''}>
+                        <span>✨</span> Auto-Fill All 35 Criteria
+                    </button>
+                </div>
             </div>
         ` : `
             <div class="alert alert-success mb-4">
@@ -5502,10 +5511,17 @@ function renderWizardStep1() {
             </button>
         `}
 
+        <div style="background: var(--blue-50); border-left: 4px solid var(--blue-600); padding: 12px 16px; border-radius: 6px; margin: 24px 0;">
+            <div style="font-weight: 700; color: var(--blue-900); margin-bottom: 4px;">💡 Tip</div>
+            <div style="font-size: 13px; color: var(--blue-700);">
+                AI auto-fill is completely optional. You can skip this step and manually enter all initiative details in the following steps.
+            </div>
+        </div>
+
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="closeProjectWizard()">Cancel</button>
-            <button class="btn btn-primary" onclick="wizardNext(1)" ${!state.wizardData.description ? 'disabled' : ''}>
-                Next: Header Info →
+            <button class="btn btn-primary" onclick="wizardNext(1)">
+                ${state.showDescriptionBox ? 'Skip AI & Enter Manually →' : 'Next: Basic Info →'}
             </button>
         </div>
     `;
