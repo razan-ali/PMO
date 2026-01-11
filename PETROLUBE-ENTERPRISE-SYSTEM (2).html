@@ -3253,6 +3253,7 @@ function renderHeader() {
                 <nav>
                     <a href="#" class="nav-link ${state.currentPage === 'dashboard' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('dashboard');">Dashboard</a>
                     <a href="#" class="nav-link ${state.currentPage === 'projects' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('projects');">Projects</a>
+                    <a href="#" class="nav-link ${state.currentPage === 'pmo' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('pmo');">PMO Manager</a>
                     <a href="#" class="nav-link ${state.currentPage === 'templates' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('templates');">Templates</a>
                     <a href="#" class="nav-link ${state.currentPage === 'scenarios' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('scenarios');">Scenarios</a>
                     <a href="#" class="nav-link ${state.currentPage === 'insights' ? 'active' : ''}" onclick="event.preventDefault(); navigateTo('insights');">Insights</a>
@@ -3290,6 +3291,7 @@ function renderPage() {
     const pages = {
         'dashboard': renderDashboard,
         'projects': renderProjects,
+        'pmo': renderPMOManager,
         'templates': renderTemplates,
         'scenarios': renderScenarios,
         'insights': renderInsights,
@@ -3845,6 +3847,518 @@ function renderProjectsTable(topOnly = false) {
             </tbody>
         </table>
     `;
+}
+
+// ============================================================================
+// PMO MANAGER PAGE
+// ============================================================================
+
+function renderPMOManager() {
+    const data = state.store.getData();
+    const selectedProject = state.selectedPMOProject ? data.projects.find(p => p.id === state.selectedPMOProject) : null;
+
+    // Calculate portfolio stats
+    const totalProjects = data.projects.length;
+    const activeProjects = data.projects.filter(p => p.status === 'Ready' || p.status === 'In Progress').length;
+    const completedMilestones = data.projects.reduce((sum, p) => sum + (p.milestones?.filter(m => m.status === 'completed').length || 0), 0);
+    const totalMilestones = data.projects.reduce((sum, p) => sum + (p.milestones?.length || 0), 0);
+    const totalTasks = data.projects.reduce((sum, p) => sum + (p.tasks?.length || 0), 0);
+    const completedTasks = data.projects.reduce((sum, p) => sum + (p.tasks?.filter(t => t.status === 'completed').length || 0), 0);
+
+    return `
+        <div class="container" style="padding: 40px 32px;">
+            <div style="margin-bottom: 32px;">
+                <h2 style="font-size: 32px; font-weight: 900; color: var(--neutral-900); margin-bottom: 8px;">
+                    📊 PMO Manager Dashboard
+                </h2>
+                <p style="color: var(--neutral-600); font-size: 16px;">
+                    Project timelines, task management, and portfolio tracking
+                </p>
+            </div>
+
+            <!-- Portfolio Overview Stats -->
+            <div class="grid grid-4 mb-6">
+                ${[
+                    { icon: '📁', label: 'Total Projects', value: totalProjects, color: 'var(--blue-600)' },
+                    { icon: '🚀', label: 'Active Projects', value: activeProjects, color: 'var(--green-600)' },
+                    { icon: '📍', label: 'Milestones', value: `${completedMilestones}/${totalMilestones}`, color: 'var(--purple-600)' },
+                    { icon: '✓', label: 'Tasks Progress', value: totalTasks > 0 ? `${Math.round(completedTasks/totalTasks*100)}%` : '0%', color: 'var(--orange-600)' }
+                ].map(stat => `
+                    <div class="card" style="padding: 24px; text-align: center;">
+                        <div style="font-size: 40px; margin-bottom: 12px;">${stat.icon}</div>
+                        <div style="font-size: 28px; font-weight: 800; color: ${stat.color}; margin-bottom: 4px;">${stat.value}</div>
+                        <div style="font-size: 13px; color: var(--neutral-600); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">${stat.label}</div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <!-- Gantt Chart Section -->
+            <div class="card mb-6" style="padding: 0; overflow: hidden;">
+                <div style="padding: 24px; border-bottom: 1px solid var(--neutral-200); background: var(--neutral-50);">
+                    <h3 style="font-size: 18px; font-weight: 800; color: var(--neutral-900); margin-bottom: 4px;">
+                        📅 Project Timeline - Gantt Chart
+                    </h3>
+                    <p style="font-size: 14px; color: var(--neutral-600);">
+                        Visual timeline of all active projects and their milestones
+                    </p>
+                </div>
+                <div id="gantt-chart-container" style="padding: 24px; overflow-x: auto; background: white;">
+                    ${renderGanttChart(data.projects)}
+                </div>
+            </div>
+
+            <!-- Project Selector and Task Management -->
+            <div class="grid grid-2 mb-6">
+                <!-- Project List -->
+                <div class="card" style="padding: 24px;">
+                    <h3 style="font-size: 18px; font-weight: 800; color: var(--neutral-900); margin-bottom: 16px;">
+                        📂 Select Project
+                    </h3>
+                    <div style="max-height: 500px; overflow-y: auto;">
+                        ${data.projects.map(project => `
+                            <div onclick="selectPMOProject('${project.id}')"
+                                 style="padding: 16px; border: 2px solid ${selectedProject?.id === project.id ? 'var(--petro-green-700)' : 'var(--neutral-200)'};
+                                        border-radius: 8px; margin-bottom: 12px; cursor: pointer;
+                                        background: ${selectedProject?.id === project.id ? 'var(--petro-green-50)' : 'white'};
+                                        transition: all 0.2s;">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                                    <strong style="font-weight: 700; color: var(--neutral-900); flex: 1;">
+                                        ${project.criteriaValues?.initiative_name || project.name}
+                                    </strong>
+                                    ${selectedProject?.id === project.id ? '<div style="width: 20px; height: 20px; background: var(--petro-green-700); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;">✓</div>' : ''}
+                                </div>
+                                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                    <span class="badge badge-blue" style="font-size: 11px;">${project.tasks?.length || 0} tasks</span>
+                                    <span class="badge badge-purple" style="font-size: 11px;">${project.milestones?.length || 0} milestones</span>
+                                </div>
+                                <div style="font-size: 12px; color: var(--neutral-600);">
+                                    Timeline: ${project.criteriaValues?.implementation_timeline?.start_date || 'TBD'} → ${project.criteriaValues?.implementation_timeline?.end_date || 'TBD'}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Task Management Panel -->
+                <div class="card" style="padding: 24px;">
+                    ${selectedProject ? renderTaskManagement(selectedProject) : `
+                        <div style="text-align: center; padding: 60px 20px; color: var(--neutral-400);">
+                            <div style="font-size: 64px; margin-bottom: 16px;">📋</div>
+                            <p style="font-size: 16px; font-weight: 600;">Select a project to manage tasks</p>
+                        </div>
+                    `}
+                </div>
+            </div>
+
+            <!-- Resource Allocation Matrix -->
+            <div class="card mb-6" style="padding: 24px;">
+                <h3 style="font-size: 18px; font-weight: 800; color: var(--neutral-900); margin-bottom: 16px;">
+                    👥 Resource Allocation & Capacity Planning
+                </h3>
+                ${renderResourceAllocation(data.projects)}
+            </div>
+
+            <!-- Milestone Tracker -->
+            <div class="card mb-6" style="padding: 24px;">
+                <h3 style="font-size: 18px; font-weight: 800; color: var(--neutral-900); margin-bottom: 16px;">
+                    🎯 Upcoming Milestones
+                </h3>
+                ${renderMilestoneTracker(data.projects)}
+            </div>
+        </div>
+    `;
+}
+
+function renderGanttChart(projects) {
+    const activeProjects = projects.filter(p => p.criteriaValues?.implementation_timeline?.start_date && p.criteriaValues?.implementation_timeline?.end_date);
+
+    if (activeProjects.length === 0) {
+        return '<div style="text-align: center; padding: 40px; color: var(--neutral-500);">No projects with timelines defined yet</div>';
+    }
+
+    // Calculate date range
+    const allDates = activeProjects.flatMap(p => [
+        new Date(p.criteriaValues.implementation_timeline.start_date),
+        new Date(p.criteriaValues.implementation_timeline.end_date)
+    ]);
+    const minDate = new Date(Math.min(...allDates));
+    const maxDate = new Date(Math.max(...allDates));
+
+    // Generate months for header
+    const months = [];
+    const currentMonth = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+    while (currentMonth <= maxDate) {
+        months.push(new Date(currentMonth));
+        currentMonth.setMonth(currentMonth.getMonth() + 1);
+    }
+
+    const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
+    const dayWidth = 3; // pixels per day
+
+    return `
+        <div style="min-width: ${totalDays * dayWidth + 300}px;">
+            <!-- Timeline Header -->
+            <div style="display: flex; border-bottom: 2px solid var(--neutral-300); margin-bottom: 16px;">
+                <div style="width: 280px; padding: 12px; font-weight: 700; background: var(--neutral-100);">Project</div>
+                <div style="flex: 1; display: flex; position: relative;">
+                    ${months.map((month, idx) => {
+                        const monthStart = new Date(month);
+                        const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+                        const daysInMonth = monthEnd.getDate();
+                        return `
+                            <div style="width: ${daysInMonth * dayWidth}px; padding: 12px 8px; text-align: center; border-left: 1px solid var(--neutral-200); background: var(--neutral-50); font-size: 12px; font-weight: 700;">
+                                ${month.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+
+            <!-- Project Rows -->
+            ${activeProjects.map(project => {
+                const startDate = new Date(project.criteriaValues.implementation_timeline.start_date);
+                const endDate = new Date(project.criteriaValues.implementation_timeline.end_date);
+                const startOffset = Math.ceil((startDate - minDate) / (1000 * 60 * 60 * 24));
+                const duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+
+                return `
+                    <div style="display: flex; border-bottom: 1px solid var(--neutral-200); padding: 8px 0;">
+                        <div style="width: 280px; padding: 8px; display: flex; align-items: center;">
+                            <div>
+                                <div style="font-weight: 700; font-size: 13px; color: var(--neutral-900); margin-bottom: 4px;">
+                                    ${project.criteriaValues?.initiative_name || project.name}
+                                </div>
+                                <div style="font-size: 11px; color: var(--neutral-600);">
+                                    ${project.tasks?.length || 0} tasks • ${project.tasks?.filter(t => t.status === 'completed').length || 0} completed
+                                </div>
+                            </div>
+                        </div>
+                        <div style="flex: 1; position: relative; height: 40px;">
+                            <div style="position: absolute; left: ${startOffset * dayWidth}px; width: ${duration * dayWidth}px;
+                                        height: 24px; top: 8px; background: linear-gradient(135deg, var(--petro-green-600), var(--petro-green-500));
+                                        border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                <div style="position: absolute; inset: 0; background: rgba(255,255,255,0.2); border-radius: 4px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+function renderTaskManagement(project) {
+    const tasks = project.tasks || [];
+
+    return `
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="font-size: 18px; font-weight: 800; color: var(--neutral-900);">
+                    📋 Tasks for ${project.criteriaValues?.initiative_name || project.name}
+                </h3>
+                <button class="btn btn-primary btn-sm" onclick="openAddTaskModal('${project.id}')">
+                    + Add Task
+                </button>
+            </div>
+
+            ${tasks.length === 0 ? `
+                <div style="text-align: center; padding: 40px 20px; background: var(--neutral-50); border-radius: 8px;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">📝</div>
+                    <p style="color: var(--neutral-600); margin-bottom: 16px;">No tasks yet</p>
+                    <button class="btn btn-secondary btn-sm" onclick="openAddTaskModal('${project.id}')">Create First Task</button>
+                </div>
+            ` : `
+                <div style="max-height: 500px; overflow-y: auto;">
+                    ${tasks.map((task, idx) => `
+                        <div class="card" style="padding: 16px; margin-bottom: 12px; border-left: 4px solid ${
+                            task.status === 'completed' ? 'var(--green-600)' :
+                            task.status === 'in_progress' ? 'var(--blue-600)' :
+                            task.status === 'blocked' ? 'var(--red-600)' : 'var(--neutral-400)'
+                        };">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                                <div style="flex: 1;">
+                                    <strong style="font-weight: 700; color: var(--neutral-900); display: block; margin-bottom: 8px;">
+                                        ${task.name}
+                                    </strong>
+                                    ${task.description ? `<p style="font-size: 13px; color: var(--neutral-600); margin-bottom: 8px;">${task.description}</p>` : ''}
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="btn btn-secondary btn-sm" onclick="editTask('${project.id}', ${idx})">Edit</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteTask('${project.id}', ${idx})">Delete</button>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                <div>
+                                    <label style="font-size: 11px; text-transform: uppercase; color: var(--neutral-600); font-weight: 700; display: block; margin-bottom: 4px;">Status</label>
+                                    <select class="form-control" style="font-size: 13px; padding: 4px 8px;" onchange="updateTaskStatus('${project.id}', ${idx}, this.value)">
+                                        <option value="not_started" ${task.status === 'not_started' ? 'selected' : ''}>Not Started</option>
+                                        <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                                        <option value="blocked" ${task.status === 'blocked' ? 'selected' : ''}>Blocked</option>
+                                        <option value="completed" ${task.status === 'completed' ? 'selected' : ''}>Completed</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; text-transform: uppercase; color: var(--neutral-600); font-weight: 700; display: block; margin-bottom: 4px;">Priority</label>
+                                    <span class="badge ${
+                                        task.priority === 'high' ? 'badge-red' :
+                                        task.priority === 'medium' ? 'badge-orange' : 'badge-gray'
+                                    }">${task.priority || 'low'}</span>
+                                </div>
+                                ${task.assignedTo ? `
+                                    <div>
+                                        <label style="font-size: 11px; text-transform: uppercase; color: var(--neutral-600); font-weight: 700; display: block; margin-bottom: 4px;">Assigned To</label>
+                                        <span style="font-size: 13px; color: var(--neutral-900);">${task.assignedTo}</span>
+                                    </div>
+                                ` : ''}
+                                ${task.dueDate ? `
+                                    <div>
+                                        <label style="font-size: 11px; text-transform: uppercase; color: var(--neutral-600); font-weight: 700; display: block; margin-bottom: 4px;">Due Date</label>
+                                        <span style="font-size: 13px; color: var(--neutral-900);">${new Date(task.dueDate).toLocaleDateString()}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `}
+        </div>
+    `;
+}
+
+function renderResourceAllocation(projects) {
+    // Extract unique team members from tasks
+    const allTeamMembers = new Set();
+    projects.forEach(p => {
+        (p.tasks || []).forEach(t => {
+            if (t.assignedTo) allTeamMembers.add(t.assignedTo);
+        });
+    });
+
+    if (allTeamMembers.size === 0) {
+        return '<div style="text-align: center; padding: 20px; color: var(--neutral-500);">No resource assignments yet</div>';
+    }
+
+    return `
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Team Member</th>
+                        <th>Active Tasks</th>
+                        <th>Completed Tasks</th>
+                        <th>Projects Involved</th>
+                        <th>Workload</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${Array.from(allTeamMembers).map(member => {
+                        const activeTasks = projects.reduce((sum, p) =>
+                            sum + (p.tasks?.filter(t => t.assignedTo === member && t.status !== 'completed').length || 0), 0);
+                        const completedTasks = projects.reduce((sum, p) =>
+                            sum + (p.tasks?.filter(t => t.assignedTo === member && t.status === 'completed').length || 0), 0);
+                        const projectsInvolved = projects.filter(p =>
+                            (p.tasks || []).some(t => t.assignedTo === member)).length;
+
+                        const workload = activeTasks < 3 ? 'light' : activeTasks < 6 ? 'medium' : 'heavy';
+
+                        return `
+                            <tr>
+                                <td><strong>${member}</strong></td>
+                                <td>${activeTasks}</td>
+                                <td>${completedTasks}</td>
+                                <td>${projectsInvolved}</td>
+                                <td>
+                                    <span class="badge ${
+                                        workload === 'light' ? 'badge-green' :
+                                        workload === 'medium' ? 'badge-orange' : 'badge-red'
+                                    }">${workload.toUpperCase()}</span>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function renderMilestoneTracker(projects) {
+    const allMilestones = [];
+    projects.forEach(project => {
+        (project.milestones || []).forEach(milestone => {
+            allMilestones.push({
+                ...milestone,
+                projectName: project.criteriaValues?.initiative_name || project.name,
+                projectId: project.id
+            });
+        });
+    });
+
+    // Sort by date
+    allMilestones.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    if (allMilestones.length === 0) {
+        return '<div style="text-align: center; padding: 20px; color: var(--neutral-500);">No milestones defined yet</div>';
+    }
+
+    return `
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Milestone</th>
+                        <th>Project</th>
+                        <th>Target Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${allMilestones.slice(0, 10).map((milestone, idx) => {
+                        const isPast = new Date(milestone.date) < new Date();
+                        return `
+                            <tr style="${isPast && milestone.status !== 'completed' ? 'background: var(--red-50);' : ''}">
+                                <td><strong>${milestone.name}</strong></td>
+                                <td>${milestone.projectName}</td>
+                                <td>${new Date(milestone.date).toLocaleDateString()}</td>
+                                <td>
+                                    <span class="badge ${
+                                        milestone.status === 'completed' ? 'badge-green' :
+                                        milestone.status === 'in_progress' ? 'badge-blue' :
+                                        isPast ? 'badge-red' : 'badge-gray'
+                                    }">${milestone.status || 'pending'}</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-secondary btn-sm" onclick="updateMilestoneStatus('${milestone.projectId}', ${idx})">Update</button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+// PMO Manager Functions
+
+function selectPMOProject(projectId) {
+    state.selectedPMOProject = projectId;
+    render();
+}
+
+function openAddTaskModal(projectId) {
+    const taskName = prompt('Task Name:');
+    if (!taskName) return;
+
+    const description = prompt('Task Description (optional):');
+    const assignedTo = prompt('Assigned To (optional):');
+    const priority = prompt('Priority (low/medium/high):') || 'medium';
+    const dueDate = prompt('Due Date (YYYY-MM-DD, optional):');
+
+    addTask(projectId, {
+        name: taskName,
+        description: description || '',
+        assignedTo: assignedTo || '',
+        priority: priority,
+        dueDate: dueDate || '',
+        status: 'not_started',
+        createdAt: new Date().toISOString()
+    });
+}
+
+function addTask(projectId, task) {
+    const data = state.store.getData();
+    const project = data.projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    if (!project.tasks) project.tasks = [];
+    project.tasks.push(task);
+
+    state.store.saveData();
+    state.store.addAuditEvent({
+        type: 'TaskCreated',
+        entityType: 'Task',
+        entityId: projectId,
+        actor: state.currentUserName
+    });
+
+    render();
+}
+
+function updateTaskStatus(projectId, taskIndex, newStatus) {
+    const data = state.store.getData();
+    const project = data.projects.find(p => p.id === projectId);
+    if (!project || !project.tasks || !project.tasks[taskIndex]) return;
+
+    project.tasks[taskIndex].status = newStatus;
+    state.store.saveData();
+
+    state.store.addAuditEvent({
+        type: 'TaskUpdated',
+        entityType: 'Task',
+        entityId: projectId,
+        actor: state.currentUserName
+    });
+
+    render();
+}
+
+function editTask(projectId, taskIndex) {
+    const data = state.store.getData();
+    const project = data.projects.find(p => p.id === projectId);
+    if (!project || !project.tasks || !project.tasks[taskIndex]) return;
+
+    const task = project.tasks[taskIndex];
+    const newName = prompt('Task Name:', task.name);
+    if (!newName) return;
+
+    const newDescription = prompt('Description:', task.description);
+    const newAssignedTo = prompt('Assigned To:', task.assignedTo);
+    const newPriority = prompt('Priority (low/medium/high):', task.priority);
+
+    task.name = newName;
+    task.description = newDescription || '';
+    task.assignedTo = newAssignedTo || '';
+    task.priority = newPriority || 'medium';
+
+    state.store.saveData();
+    render();
+}
+
+function deleteTask(projectId, taskIndex) {
+    if (!confirm('Are you sure you want to delete this task?')) return;
+
+    const data = state.store.getData();
+    const project = data.projects.find(p => p.id === projectId);
+    if (!project || !project.tasks || !project.tasks[taskIndex]) return;
+
+    project.tasks.splice(taskIndex, 1);
+    state.store.saveData();
+
+    state.store.addAuditEvent({
+        type: 'TaskDeleted',
+        entityType: 'Task',
+        entityId: projectId,
+        actor: state.currentUserName
+    });
+
+    render();
+}
+
+function updateMilestoneStatus(projectId, milestoneIndex) {
+    const data = state.store.getData();
+    const project = data.projects.find(p => p.id === projectId);
+    if (!project || !project.milestones || !project.milestones[milestoneIndex]) return;
+
+    const milestone = project.milestones[milestoneIndex];
+    const newStatus = prompt('Status (pending/in_progress/completed):', milestone.status || 'pending');
+    if (!newStatus) return;
+
+    milestone.status = newStatus;
+    state.store.saveData();
+    render();
 }
 
 function renderProjects() {
@@ -5464,6 +5978,56 @@ function renderWizard() {
 }
 
 function renderWizardStep1() {
+    // AI Processing State
+    if (state.aiProcessing) {
+        return `
+            <div style="margin-bottom: 32px;">
+                <h3 style="font-size: 20px; font-weight: 800; color: var(--neutral-900); margin-bottom: 8px;">
+                    🤖 Step 1: AI-Powered Auto-Fill (Optional)
+                </h3>
+                <p style="color: var(--neutral-600); font-size: 14px;">
+                    Processing your description...
+                </p>
+            </div>
+
+            <div class="agent-panel" style="text-align: center; padding: 48px 24px;">
+                <div style="font-size: 64px; margin-bottom: 24px; animation: pulse 2s infinite;">⚡</div>
+                <h4 style="font-size: 18px; font-weight: 800; color: var(--blue-600); margin-bottom: 12px;">AI is Analyzing Your Initiative</h4>
+                <p style="font-size: 14px; color: var(--neutral-700); margin-bottom: 24px;">
+                    The AI is intelligently analyzing your description and populating all 35 criteria fields...
+                </p>
+
+                <div style="background: var(--neutral-100); border-radius: 8px; padding: 16px; max-width: 500px; margin: 0 auto;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <div style="width: 20px; height: 20px; border-radius: 50%; background: var(--green-500); animation: pulse 1s infinite;"></div>
+                        <span style="font-size: 13px; color: var(--neutral-700);">Extracting strategic objectives...</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <div style="width: 20px; height: 20px; border-radius: 50%; background: var(--blue-500); animation: pulse 1s 0.3s infinite;"></div>
+                        <span style="font-size: 13px; color: var(--neutral-700);">Calculating financial projections...</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 20px; height: 20px; border-radius: 50%; background: var(--purple-500); animation: pulse 1s 0.6s infinite;"></div>
+                        <span style="font-size: 13px; color: var(--neutral-700);">Assigning BCG i2i dimensions...</span>
+                    </div>
+                </div>
+            </div>
+
+            <style>
+                @keyframes pulse {
+                    0%, 100% { opacity: 1; transform: scale(1); }
+                    50% { opacity: 0.6; transform: scale(1.1); }
+                }
+            </style>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" disabled>Cancel</button>
+                <button class="btn btn-primary" disabled>Processing...</button>
+            </div>
+        `;
+    }
+
+    // Initial or Complete State
     return `
         <div style="margin-bottom: 32px;">
             <h3 style="font-size: 20px; font-weight: 800; color: var(--neutral-900); margin-bottom: 8px;">
@@ -5521,7 +6085,7 @@ function renderWizardStep1() {
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="closeProjectWizard()">Cancel</button>
             <button class="btn btn-primary" onclick="wizardNext(1)">
-                ${state.showDescriptionBox ? 'Skip AI & Enter Manually →' : 'Next: Basic Info →'}
+                ${state.showDescriptionBox ? 'Skip AI & Enter Manually →' : 'Next: Review AI Results →'}
             </button>
         </div>
     `;
@@ -6170,6 +6734,8 @@ function openProjectWizard() {
     state.wizardStep = 1;
     state.wizardData = { criteriaValues: {} };
     state.showDescriptionBox = true;
+    state.aiProcessing = false;
+    state.aiComplete = false;
 
     const modal = document.getElementById('projectWizardModal');
     if (modal) {
@@ -6192,17 +6758,28 @@ function runAIAutoFill() {
         alert('Please enter a project description first');
         return;
     }
-    
+
+    // Show processing state
+    state.aiProcessing = true;
     state.wizardData.description = description;
-    const generated = AIAgent.analyzeDescription(description);
-    state.wizardData.criteriaValues = generated;
-    state.showDescriptionBox = false;
-    
     renderWizard();
+
+    // Simulate AI processing with timeout (in real app, this would be an API call)
+    setTimeout(() => {
+        const generated = AIAgent.analyzeDescription(description);
+        state.wizardData.criteriaValues = generated;
+        state.showDescriptionBox = false;
+        state.aiProcessing = false;
+        state.aiComplete = true;
+
+        renderWizard();
+    }, 1500); // 1.5 second simulated processing
 }
 
 function resetAIAutoFill() {
     state.showDescriptionBox = true;
+    state.aiProcessing = false;
+    state.aiComplete = false;
     state.wizardData.criteriaValues = {};
     renderWizard();
 }
