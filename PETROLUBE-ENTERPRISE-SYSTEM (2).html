@@ -644,8 +644,16 @@ const SAMPLE_PROJECTS = [
                 description: 'Collect requirements from stakeholders',
                 assignedTo: 'Sara Al-Otaibi',
                 priority: 'high',
+                startDate: '2025-01-15',
                 dueDate: '2025-02-01',
                 status: 'in_progress',
+                progress: 60,
+                raci: {
+                    responsible: ['Sara Al-Otaibi'],
+                    accountable: ['Ghadah Al-Otaibi'],
+                    consulted: ['Khalid Al-Fahad', 'Ahmed Al-Mansour'],
+                    informed: ['Rawan Al-Harbi']
+                },
                 createdAt: '2025-01-10T10:00:00Z'
             },
             {
@@ -653,9 +661,51 @@ const SAMPLE_PROJECTS = [
                 description: 'Create new Redwood interface designs',
                 assignedTo: 'Khalid Al-Fahad',
                 priority: 'high',
+                startDate: '2025-01-20',
                 dueDate: '2025-02-15',
                 status: 'not_started',
+                progress: 0,
+                raci: {
+                    responsible: ['Khalid Al-Fahad'],
+                    accountable: ['Ghadah Al-Otaibi'],
+                    consulted: ['Sara Al-Otaibi'],
+                    informed: ['Rawan Al-Harbi']
+                },
                 createdAt: '2025-01-10T10:05:00Z'
+            },
+            {
+                name: 'Backend API Development',
+                description: 'Develop Redwood REST APIs',
+                assignedTo: 'Ahmed Al-Mansour',
+                priority: 'high',
+                startDate: '2025-02-01',
+                dueDate: '2025-03-15',
+                status: 'not_started',
+                progress: 0,
+                raci: {
+                    responsible: ['Ahmed Al-Mansour', 'Fahad Al-Dossary'],
+                    accountable: ['Khalid Al-Mansour'],
+                    consulted: ['Sara Al-Otaibi'],
+                    informed: ['Ghadah Al-Otaibi']
+                },
+                createdAt: '2025-01-10T10:10:00Z'
+            },
+            {
+                name: 'User Acceptance Testing',
+                description: 'UAT with key stakeholders',
+                assignedTo: 'Rawan Al-Harbi',
+                priority: 'medium',
+                startDate: '2025-03-01',
+                dueDate: '2025-03-31',
+                status: 'not_started',
+                progress: 0,
+                raci: {
+                    responsible: ['Rawan Al-Harbi'],
+                    accountable: ['Ghadah Al-Otaibi'],
+                    consulted: ['All Stakeholders'],
+                    informed: ['Executive Team']
+                },
+                createdAt: '2025-01-10T10:15:00Z'
             }
         ],
         milestones: [
@@ -752,10 +802,52 @@ const SAMPLE_PROJECTS = [
                 name: 'Data Collection Setup',
                 description: 'Set up IoT sensors for data collection',
                 assignedTo: 'Sara Al-Otaibi',
-                priority: 'medium',
+                priority: 'high',
+                startDate: '2025-02-01',
                 dueDate: '2025-03-01',
                 status: 'not_started',
+                progress: 0,
+                raci: {
+                    responsible: ['Sara Al-Otaibi', 'Khalid Al-Mansour'],
+                    accountable: ['Ghadah Al-Otaibi'],
+                    consulted: ['IT Team'],
+                    informed: ['Operations']
+                },
                 createdAt: '2025-01-10T11:00:00Z'
+            },
+            {
+                name: 'AI Model Training',
+                description: 'Train predictive maintenance ML models',
+                assignedTo: 'Ahmed Al-Mansour',
+                priority: 'high',
+                startDate: '2025-03-01',
+                dueDate: '2025-05-31',
+                status: 'not_started',
+                progress: 0,
+                raci: {
+                    responsible: ['Ahmed Al-Mansour'],
+                    accountable: ['Ghadah Al-Otaibi'],
+                    consulted: ['Data Science Team'],
+                    informed: ['Executive Team']
+                },
+                createdAt: '2025-01-10T11:05:00Z'
+            },
+            {
+                name: 'Integration with SAP',
+                description: 'Integrate predictive alerts into SAP PM',
+                assignedTo: 'Khalid Al-Mansour',
+                priority: 'medium',
+                startDate: '2025-06-01',
+                dueDate: '2025-07-31',
+                status: 'not_started',
+                progress: 0,
+                raci: {
+                    responsible: ['Khalid Al-Mansour'],
+                    accountable: ['Ghadah Al-Otaibi'],
+                    consulted: ['SAP Team', 'IT Architecture'],
+                    informed: ['Operations', 'Maintenance Team']
+                },
+                createdAt: '2025-01-10T11:10:00Z'
             }
         ],
         milestones: [
@@ -1128,6 +1220,7 @@ function renderPMOManager() {
     const totalTasks = state.projects.reduce((sum, p) => sum + (p.tasks?.length || 0), 0);
     const completedTasks = state.projects.reduce((sum, p) => sum + (p.tasks?.filter(t => t.status === 'completed').length || 0), 0);
     const totalMilestones = state.projects.reduce((sum, p) => sum + (p.milestones?.length || 0), 0);
+    const pmoView = state.pmoView || 'tasks'; // tasks, gantt, raci
 
     return `
         <div class="container" style="padding: 40px 32px;">
@@ -1136,6 +1229,19 @@ function renderPMOManager() {
                 <p style="color: var(--neutral-600); font-size: 16px;">Project timelines, task management, and portfolio tracking</p>
             </div>
 
+            <!-- View Tabs -->
+            <div style="margin-bottom: 24px; display: flex; gap: 8px; border-bottom: 2px solid var(--neutral-200); padding-bottom: 0;">
+                <button class="btn ${pmoView === 'tasks' ? 'btn-primary' : 'btn-secondary'}" style="border-radius: 8px 8px 0 0;"
+                        onclick="setPMOView('tasks')">📋 Task Management</button>
+                <button class="btn ${pmoView === 'gantt' ? 'btn-primary' : 'btn-secondary'}" style="border-radius: 8px 8px 0 0;"
+                        onclick="setPMOView('gantt')">📊 Portfolio Gantt Chart</button>
+                <button class="btn ${pmoView === 'raci' ? 'btn-primary' : 'btn-secondary'}" style="border-radius: 8px 8px 0 0;"
+                        onclick="setPMOView('raci')">👥 RACI Matrix</button>
+            </div>
+
+            ${pmoView === 'gantt' ? renderPortfolioGantt() : ''}
+            ${pmoView === 'raci' ? renderRACIMatrix() : ''}
+            ${pmoView === 'tasks' ? `
             <div class="grid grid-4 mb-6">
                 ${[
                     { icon: '📁', label: 'Total Projects', value: state.projects.length, color: 'var(--blue-600)' },
@@ -1182,6 +1288,301 @@ function renderPMOManager() {
                         </div>
                     `}
                 </div>
+            </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// ============================================================================
+// PORTFOLIO GANTT CHART
+// ============================================================================
+
+function renderPortfolioGantt() {
+    // Calculate timeline bounds
+    const today = new Date();
+    const allTasks = [];
+    state.projects.forEach(project => {
+        if (project.tasks) {
+            project.tasks.forEach(task => {
+                allTasks.push({
+                    ...task,
+                    projectId: project.id,
+                    projectName: project.criteriaValues?.initiative_name || project.name
+                });
+            });
+        }
+    });
+
+    if (allTasks.length === 0) {
+        return `
+            <div class="card" style="padding: 60px; text-align: center;">
+                <div style="font-size: 64px; margin-bottom: 16px;">📊</div>
+                <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">No Tasks to Display</h3>
+                <p style="color: var(--neutral-600);">Add tasks to projects to see them in the Gantt chart</p>
+            </div>
+        `;
+    }
+
+    // Find min and max dates
+    const dates = allTasks.flatMap(t => [new Date(t.startDate), new Date(t.dueDate)]);
+    const minDate = new Date(Math.min(...dates));
+    const maxDate = new Date(Math.max(...dates));
+
+    // Generate month columns
+    const months = [];
+    let current = new Date(minDate);
+    current.setDate(1); // Start of month
+
+    while (current <= maxDate) {
+        months.push(new Date(current));
+        current.setMonth(current.getMonth() + 1);
+    }
+
+    // Calculate position helpers
+    const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
+    const getPosition = (date) => {
+        const daysDiff = Math.ceil((new Date(date) - minDate) / (1000 * 60 * 60 * 24));
+        return (daysDiff / totalDays) * 100;
+    };
+    const getWidth = (startDate, endDate) => {
+        const duration = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24));
+        return (duration / totalDays) * 100;
+    };
+
+    return `
+        <div class="card" style="padding: 24px;">
+            <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="font-size: 20px; font-weight: 800;">📊 Portfolio Gantt Chart</h3>
+                <div style="font-size: 13px; color: var(--neutral-600);">
+                    <strong>${allTasks.length} tasks</strong> across <strong>${state.projects.length} projects</strong>
+                    | Timeline: ${minDate.toLocaleDateString()} - ${maxDate.toLocaleDateString()}
+                </div>
+            </div>
+
+            <div style="overflow-x: auto; overflow-y: auto; max-height: 600px; border: 1px solid var(--neutral-200); border-radius: 8px;">
+                <table style="width: 100%; min-width: 1200px; border-collapse: collapse;">
+                    <thead style="position: sticky; top: 0; background: var(--neutral-50); z-index: 10;">
+                        <tr>
+                            <th style="width: 250px; text-align: left; padding: 12px; border-bottom: 2px solid var(--neutral-300); border-right: 2px solid var(--neutral-300); font-weight: 700;">Task / Project</th>
+                            <th style="width: 100px; text-align: center; padding: 12px; border-bottom: 2px solid var(--neutral-300); border-right: 2px solid var(--neutral-300); font-weight: 700;">Assigned</th>
+                            <th style="width: 80px; text-align: center; padding: 12px; border-bottom: 2px solid var(--neutral-300); border-right: 2px solid var(--neutral-300); font-weight: 700;">Status</th>
+                            <th style="position: relative; padding: 12px; border-bottom: 2px solid var(--neutral-300);">
+                                <div style="display: flex; position: relative; height: 40px;">
+                                    ${months.map((month, idx) => {
+                                        const monthStart = month;
+                                        const monthEnd = new Date(month);
+                                        monthEnd.setMonth(monthEnd.getMonth() + 1);
+                                        monthEnd.setDate(0); // Last day of month
+
+                                        const left = getPosition(monthStart);
+                                        const width = getWidth(monthStart, monthEnd);
+
+                                        return `
+                                            <div style="position: absolute; left: ${left}%; width: ${width}%; border-right: 1px solid var(--neutral-300); padding: 4px; text-align: center;">
+                                                <div style="font-size: 11px; font-weight: 700;">${month.toLocaleDateString('en-US', {month: 'short', year: 'numeric'})}</div>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${allTasks.map((task, idx) => {
+                            const statusColors = {
+                                'completed': 'var(--green-600)',
+                                'in_progress': 'var(--blue-600)',
+                                'blocked': 'var(--red-600)',
+                                'not_started': 'var(--neutral-400)'
+                            };
+                            const statusBadge = {
+                                'completed': 'badge-green',
+                                'in_progress': 'badge-blue',
+                                'blocked': 'badge-red',
+                                'not_started': 'badge-gray'
+                            };
+
+                            const left = getPosition(task.startDate);
+                            const width = getWidth(task.startDate, task.dueDate);
+                            const isOverdue = new Date(task.dueDate) < today && task.status !== 'completed';
+
+                            return `
+                                <tr style="border-bottom: 1px solid var(--neutral-200);">
+                                    <td style="padding: 12px; border-right: 2px solid var(--neutral-300);">
+                                        <div style="font-weight: 700; font-size: 13px; margin-bottom: 4px;">${task.name}</div>
+                                        <div style="font-size: 11px; color: var(--neutral-600);">${task.projectName}</div>
+                                    </td>
+                                    <td style="padding: 12px; text-align: center; border-right: 2px solid var(--neutral-300); font-size: 12px;">${task.assignedTo || 'Unassigned'}</td>
+                                    <td style="padding: 12px; text-align: center; border-right: 2px solid var(--neutral-300);">
+                                        <span class="badge ${statusBadge[task.status]}" style="font-size: 10px;">${task.status.replace('_', ' ')}</span>
+                                    </td>
+                                    <td style="padding: 8px; position: relative;">
+                                        <div style="position: relative; height: 32px;">
+                                            <!-- Gantt bar -->
+                                            <div style="position: absolute; left: ${left}%; width: ${width}%; top: 50%; transform: translateY(-50%);
+                                                        background: ${statusColors[task.status]}; height: 24px; border-radius: 4px;
+                                                        ${isOverdue ? 'border: 2px solid var(--red-600);' : ''}
+                                                        display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 700;
+                                                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                                ${task.progress || 0}%
+                                                ${isOverdue ? ' 🚨' : ''}
+                                            </div>
+                                            <!-- Today marker -->
+                                            ${new Date(task.startDate) <= today && new Date(task.dueDate) >= today ? `
+                                                <div style="position: absolute; left: ${getPosition(today)}%; width: 2px; height: 40px; background: var(--red-600); top: -4px; z-index: 5;">
+                                                    <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 6px solid var(--red-600);"></div>
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 16px; display: flex; gap: 24px; font-size: 12px; color: var(--neutral-700);">
+                <div><span style="display: inline-block; width: 16px; height: 16px; background: var(--green-600); border-radius: 3px; margin-right: 6px;"></span> Completed</div>
+                <div><span style="display: inline-block; width: 16px; height: 16px; background: var(--blue-600); border-radius: 3px; margin-right: 6px;"></span> In Progress</div>
+                <div><span style="display: inline-block; width: 16px; height: 16px; background: var(--neutral-400); border-radius: 3px; margin-right: 6px;"></span> Not Started</div>
+                <div><span style="display: inline-block; width: 16px; height: 16px; background: var(--red-600); border-radius: 3px; margin-right: 6px;"></span> Blocked</div>
+                <div><span style="display: inline-block; width: 2px; height: 16px; background: var(--red-600); margin-right: 6px;"></span> Today</div>
+                <div>🚨 Overdue</div>
+            </div>
+        </div>
+    `;
+}
+
+// ============================================================================
+// RACI MATRIX
+// ============================================================================
+
+function renderRACIMatrix() {
+    if (!state.selectedPMOProject) {
+        return `
+            <div class="card" style="padding: 60px; text-align: center;">
+                <div style="font-size: 64px; margin-bottom: 16px;">👥</div>
+                <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Select a Project</h3>
+                <p style="color: var(--neutral-600);">Choose a project from the list to view its RACI matrix</p>
+                <div style="margin-top: 24px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        ${state.projects.map(project => `
+                            <button class="btn btn-secondary" onclick="selectPMOProject('${project.id}'); setPMOView('raci');">
+                                ${project.criteriaValues?.initiative_name || project.name}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    const project = state.projects.find(p => p.id === state.selectedPMOProject);
+    const tasks = project?.tasks || [];
+
+    if (tasks.length === 0) {
+        return `
+            <div class="card" style="padding: 60px; text-align: center;">
+                <div style="font-size: 64px; margin-bottom: 16px;">👥</div>
+                <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">No Tasks Yet</h3>
+                <p style="color: var(--neutral-600);">Add tasks to ${project.name} to build a RACI matrix</p>
+            </div>
+        `;
+    }
+
+    // Extract all unique people from RACI assignments
+    const allPeople = new Set();
+    tasks.forEach(task => {
+        if (task.raci) {
+            [...(task.raci.responsible || []), ...(task.raci.accountable || []),
+             ...(task.raci.consulted || []), ...(task.raci.informed || [])].forEach(person => allPeople.add(person));
+        }
+    });
+    const people = Array.from(allPeople);
+
+    return `
+        <div class="card" style="padding: 24px;">
+            <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 4px;">👥 RACI Matrix</h3>
+                    <p style="font-size: 14px; color: var(--neutral-600);">${project.criteriaValues?.initiative_name || project.name}</p>
+                </div>
+                <button class="btn btn-secondary" onclick="setPMOView('tasks')">← Back to Tasks</button>
+            </div>
+
+            <div style="background: var(--blue-50); padding: 16px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid var(--blue-600);">
+                <div style="font-weight: 700; margin-bottom: 8px;">RACI Legend:</div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; font-size: 13px;">
+                    <div><strong style="color: var(--blue-700);">R</strong> = Responsible (Does the work)</div>
+                    <div><strong style="color: var(--green-700);">A</strong> = Accountable (Final authority)</div>
+                    <div><strong style="color: var(--purple-700);">C</strong> = Consulted (Provides input)</div>
+                    <div><strong style="color: var(--neutral-700);">I</strong> = Informed (Kept updated)</div>
+                </div>
+            </div>
+
+            <div style="overflow-x: auto; border: 1px solid var(--neutral-200); border-radius: 8px;">
+                <table class="data-table" style="min-width: 800px;">
+                    <thead>
+                        <tr style="background: var(--neutral-100);">
+                            <th style="min-width: 200px; position: sticky; left: 0; background: var(--neutral-100); z-index: 2;">Task</th>
+                            ${people.map(person => `
+                                <th style="min-width: 120px; text-align: center;">${person}</th>
+                            `).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tasks.map(task => {
+                            const getRaciForPerson = (person) => {
+                                const roles = [];
+                                if (task.raci?.responsible?.includes(person)) roles.push('R');
+                                if (task.raci?.accountable?.includes(person)) roles.push('A');
+                                if (task.raci?.consulted?.includes(person)) roles.push('C');
+                                if (task.raci?.informed?.includes(person)) roles.push('I');
+                                return roles;
+                            };
+
+                            return `
+                                <tr>
+                                    <td style="position: sticky; left: 0; background: white; font-weight: 600; z-index: 1;">
+                                        ${task.name}
+                                        <div style="font-size: 11px; color: var(--neutral-600); font-weight: 400; margin-top: 4px;">
+                                            ${task.startDate} → ${task.dueDate}
+                                        </div>
+                                    </td>
+                                    ${people.map(person => {
+                                        const roles = getRaciForPerson(person);
+                                        return `
+                                            <td style="text-align: center; padding: 8px;">
+                                                ${roles.length > 0 ? `
+                                                    <div style="display: flex; gap: 4px; justify-content: center; flex-wrap: wrap;">
+                                                        ${roles.map(role => {
+                                                            const colors = {
+                                                                'R': 'var(--blue-600)',
+                                                                'A': 'var(--green-600)',
+                                                                'C': 'var(--purple-600)',
+                                                                'I': 'var(--neutral-600)'
+                                                            };
+                                                            return `<span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: ${colors[role]}; color: white; border-radius: 4px; font-weight: 700; font-size: 12px;">${role}</span>`;
+                                                        }).join('')}
+                                                    </div>
+                                                ` : `<span style="color: var(--neutral-300);">—</span>`}
+                                            </td>
+                                        `;
+                                    }).join('')}
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 24px; font-size: 13px; color: var(--neutral-600);">
+                <strong>Total Tasks:</strong> ${tasks.length} |
+                <strong>Team Members:</strong> ${people.length} |
+                <strong>RACI Assignments:</strong> ${tasks.reduce((sum, t) => sum + (t.raci ?
+                    [...(t.raci.responsible || []), ...(t.raci.accountable || []), ...(t.raci.consulted || []), ...(t.raci.informed || [])].length : 0), 0)}
             </div>
         </div>
     `;
@@ -2837,6 +3238,11 @@ function selectPMOProject(projectId) {
     render();
 }
 
+function setPMOView(view) {
+    state.pmoView = view;
+    render();
+}
+
 function openAddTaskModal(projectId) {
     const taskName = prompt('Task Name:');
     if (!taskName) return;
@@ -2844,15 +3250,31 @@ function openAddTaskModal(projectId) {
     const description = prompt('Task Description (optional):');
     const assignedTo = prompt('Assigned To (optional):');
     const priority = prompt('Priority (low/medium/high):') || 'medium';
+    const startDate = prompt('Start Date (YYYY-MM-DD, optional):');
     const dueDate = prompt('Due Date (YYYY-MM-DD, optional):');
+    const progress = prompt('Progress (0-100, optional):') || '0';
+
+    // RACI Assignments
+    const responsible = prompt('Responsible (comma-separated names, optional):');
+    const accountable = prompt('Accountable (comma-separated names, optional):');
+    const consulted = prompt('Consulted (comma-separated names, optional):');
+    const informed = prompt('Informed (comma-separated names, optional):');
 
     addTask(projectId, {
         name: taskName,
         description: description || '',
         assignedTo: assignedTo || '',
         priority: priority,
+        startDate: startDate || '',
         dueDate: dueDate || '',
+        progress: parseInt(progress) || 0,
         status: 'not_started',
+        raci: {
+            responsible: responsible ? responsible.split(',').map(s => s.trim()) : [],
+            accountable: accountable ? accountable.split(',').map(s => s.trim()) : [],
+            consulted: consulted ? consulted.split(',').map(s => s.trim()) : [],
+            informed: informed ? informed.split(',').map(s => s.trim()) : []
+        },
         createdAt: new Date().toISOString()
     });
 }
@@ -2884,10 +3306,29 @@ function editTask(projectId, taskIndex) {
 
     const newDescription = prompt('Description:', task.description);
     const newAssignedTo = prompt('Assigned To:', task.assignedTo);
+    const newStartDate = prompt('Start Date (YYYY-MM-DD):', task.startDate || '');
+    const newDueDate = prompt('Due Date (YYYY-MM-DD):', task.dueDate || '');
+    const newProgress = prompt('Progress (0-100):', task.progress || '0');
+
+    // RACI Assignments
+    const currentRaci = task.raci || { responsible: [], accountable: [], consulted: [], informed: [] };
+    const newResponsible = prompt('Responsible (comma-separated names):', currentRaci.responsible.join(', '));
+    const newAccountable = prompt('Accountable (comma-separated names):', currentRaci.accountable.join(', '));
+    const newConsulted = prompt('Consulted (comma-separated names):', currentRaci.consulted.join(', '));
+    const newInformed = prompt('Informed (comma-separated names):', currentRaci.informed.join(', '));
 
     task.name = newName;
     task.description = newDescription || '';
     task.assignedTo = newAssignedTo || '';
+    task.startDate = newStartDate || '';
+    task.dueDate = newDueDate || task.dueDate;
+    task.progress = parseInt(newProgress) || 0;
+    task.raci = {
+        responsible: newResponsible ? newResponsible.split(',').map(s => s.trim()) : [],
+        accountable: newAccountable ? newAccountable.split(',').map(s => s.trim()) : [],
+        consulted: newConsulted ? newConsulted.split(',').map(s => s.trim()) : [],
+        informed: newInformed ? newInformed.split(',').map(s => s.trim()) : []
+    };
 
     render();
 }
@@ -3130,6 +3571,7 @@ window.wizardNext = wizardNext;
 window.wizardPrev = wizardPrev;
 window.submitWizard = submitWizard;
 window.selectPMOProject = selectPMOProject;
+window.setPMOView = setPMOView;
 window.openAddTaskModal = openAddTaskModal;
 window.addTask = addTask;
 window.updateTaskStatus = updateTaskStatus;
