@@ -2868,7 +2868,7 @@ class ScoringEngine {
 class AIAgent {
     static analyzeDescription(description) {
         const lowerDesc = description.toLowerCase();
-        
+
         const signals = {
             isDigital: /digital|cloud|ai|automation|software|platform|oracle|sap|erp/i.test(description),
             isInternational: /international|expansion|morocco|africa|export|global/i.test(description),
@@ -2877,68 +2877,144 @@ class AIAgent {
             isHighValue: /million|strategic|transform|competitive|market share/i.test(description),
             isQuickWin: /quick|fast|rapid|immediate|short-term/i.test(description),
             isTransformational: /transform|revolutionize|game-changer|fundamental/i.test(description),
+            hasAI: /ai|artificial intelligence|machine learning|ml|llm|agent/i.test(description),
         };
-        
+
         const generated = {};
-        
+
+        // ===== SECTION 1: METADATA (Criteria 1-5) =====
         const idMatch = description.match(/PET-\d+/i);
         generated.initiative_id = idMatch ? idMatch[0].toUpperCase() : `PET-2025-${String(Math.floor(Math.random() * 900) + 100).padStart(3, '0')}`;
-        
+
         const sentences = description.split(/[.!?]/);
         generated.initiative_name = sentences[0].trim().slice(0, 80);
-        
+        generated.owner_name = 'CITO Office';
+
         if (signals.isDigital) generated.strategic_domain = 'digital_transformation';
         else if (signals.isInternational) generated.strategic_domain = 'international_expansion';
         else if (signals.isSustainability) generated.strategic_domain = 'sustainability_esg';
         else generated.strategic_domain = 'core_business_excellence';
-        
+
         generated.portfolio_category = signals.isTransformational ? 'core_disruptive' : 'core_incremental';
-        generated.three_engines_alignment = signals.isInternational ? 'e2_expand_inorganically' : 'e1_sustain_grow';
+
+        // ===== SECTION 2: STRATEGIC POSITIONING (Criteria 6-10) =====
         generated.quadrant = signals.isQuickWin ? 'quick_win' : signals.isTransformational ? 'transformational' : 'push_harder';
         generated.strategic_priority = signals.isCritical ? 'p1_critical' : signals.isHighValue ? 'p2_high' : 'p3_medium';
-        
-        if (signals.isCritical && signals.isDigital) generated.year1_tier = 'tier_1a';
-        else if (signals.isQuickWin && signals.isDigital) generated.year1_tier = 'tier_1b';
-        else if (signals.isQuickWin) generated.year1_tier = 'tier_1c';
-        else generated.year1_tier = 'tier_2';
-        
-        generated.aramco_response = /aramco|compet/i.test(description) ? 'defensive' : 'neutral';
-        generated.bcg_i2i_target = signals.isTransformational ? 12 : signals.isHighValue ? 8 : 5;
-        generated.strategic_impact_score = signals.isCritical ? 23 : signals.isHighValue ? 20 : 18;
-        generated.financial_impact_score = signals.isHighValue ? 22 : 19;
-        generated.execution_feasibility_score = signals.isQuickWin ? 18 : signals.isTransformational ? 12 : 15;
-        generated.risk_management_score = 11;
-        generated.innovation_index_score = signals.isDigital ? 13 : 10;
-        
-        const investmentMatch = description.match(/(\d+(?:\.\d+)?)\s*(?:million|m)/i);
-        if (investmentMatch) {
-            generated.investment_required = parseFloat(investmentMatch[1]) * 1000000;
-            generated.year1_investment = generated.investment_required * 0.6;
-        } else {
-            generated.investment_required = signals.isTransformational ? 15000000 : signals.isHighValue ? 10000000 : 5000000;
-            generated.year1_investment = generated.investment_required * 0.6;
+        generated.tier = signals.isCritical ? '1a' : signals.isQuickWin ? '1b' : '2';
+        generated.aramco_response = /aramco|compet|defensive/i.test(description) ? 'defensive_protect' : 'neutral';
+
+        // BCG i2i Dimensions (multiselect with gains)
+        generated.bcg_i2i_dimensions = [];
+        if (signals.isDigital) generated.bcg_i2i_dimensions.push({ dimension: 'customer_experience', gain: signals.isTransformational ? 5 : 3 });
+        if (signals.hasAI) generated.bcg_i2i_dimensions.push({ dimension: 'operational_efficiency', gain: 4 });
+        if (signals.isInternational) generated.bcg_i2i_dimensions.push({ dimension: 'market_expansion', gain: 5 });
+        if (signals.isSustainability) generated.bcg_i2i_dimensions.push({ dimension: 'sustainability', gain: 3 });
+        if (generated.bcg_i2i_dimensions.length === 0) {
+            generated.bcg_i2i_dimensions.push({ dimension: 'operational_efficiency', gain: 3 });
         }
-        
-        const timelineMatch = description.match(/(\d+)\s*month/i);
-        generated.timeline_months = timelineMatch ? parseInt(timelineMatch[1]) : signals.isQuickWin ? 8 : signals.isTransformational ? 24 : 12;
-        generated.resource_fte = Math.ceil(generated.timeline_months * 1.5);
-        generated.expected_roi_year3 = generated.investment_required * (signals.isHighValue ? 1.8 : 1.4);
-        generated.irr_percentage = signals.isHighValue ? 38 : 25;
-        generated.payback_period = signals.isQuickWin ? 1.5 : signals.isHighValue ? 2.2 : 3.0;
-        generated.npv_5year = generated.investment_required * (signals.isHighValue ? 2.2 : 1.6);
-        generated.phase1_duration = Math.ceil(generated.timeline_months * 0.4);
-        generated.phase2_duration = Math.ceil(generated.timeline_months * 0.35);
-        generated.phase3_duration = Math.ceil(generated.timeline_months * 0.25);
-        generated.gate0_approved = 'yes';
-        generated.critical_prerequisites_count = signals.isCritical ? 5 : 3;
-        generated.technical_dependencies_count = signals.isDigital ? 6 : 4;
-        generated.organizational_dependencies_count = signals.isTransformational ? 7 : 4;
-        generated.risk1_severity = signals.isCritical ? 'high' : 'medium';
-        generated.upside_potential_sar = generated.investment_required * 0.3;
-        generated.contingency_budget = generated.investment_required * 0.1;
-        generated.roi_target_year1 = signals.isQuickWin ? 40 : 25;
-        generated.board_recommendation = signals.isCritical ? 'accelerate' : signals.isHighValue ? 'keep' : 'keep_conditions';
-        
+
+        // ===== SECTION 4: BUSINESS CASE (Criteria 17-23) =====
+        generated.problem_statement = `Current state analysis indicates critical gaps in ${signals.isDigital ? 'digital capabilities' : 'operational efficiency'} that directly impact ${signals.isCritical ? 'strategic dependencies' : 'business performance'}. ${description.split('.')[0]}. This creates significant business risk and opportunity cost.`;
+
+        generated.solution_description = `Implement ${generated.initiative_name} through phased deployment approach. Solution leverages ${signals.isDigital ? 'modern cloud-native architecture' : 'proven best practices'} to deliver ${signals.isQuickWin ? 'rapid value' : 'transformational outcomes'}. Expected to ${signals.isHighValue ? 'significantly enhance competitive position' : 'improve operational metrics'}.`;
+
+        // Financial Projections (5-year cash flows)
+        const investment = /(\d+(?:\.\d+)?)\s*(?:million|m)/i.test(description) ?
+            parseFloat(description.match(/(\d+(?:\.\d+)?)\s*(?:million|m)/i)[1]) * 1000000 :
+            (signals.isTransformational ? 15000000 : signals.isHighValue ? 10000000 : 5000000);
+
+        generated.financial_projections = {
+            wacc: 0.12,
+            years: {
+                1: Math.round(-investment * 0.6),
+                2: Math.round(-investment * 0.4 + investment * 0.4),
+                3: Math.round(investment * 0.8),
+                4: Math.round(investment * 1.2),
+                5: Math.round(investment * 1.5)
+            }
+        };
+
+        generated.strategic_rationale = `Aligns with corporate strategy to ${signals.isDigital ? 'accelerate digital transformation' : 'enhance operational excellence'}. Critical for maintaining ${signals.isCritical ? 'competitive advantage' : 'market position'}.`;
+
+        // ===== SECTION 5: IMPLEMENTATION (Criteria 24-27) =====
+        const timelineMonths = /(\d+)\s*month/i.test(description) ?
+            parseInt(description.match(/(\d+)\s*month/i)[1]) :
+            (signals.isQuickWin ? 8 : signals.isTransformational ? 24 : 12);
+
+        generated.trl_level = signals.isDigital && !signals.isTransformational ? 7 :
+                             signals.isQuickWin ? 8 :
+                             signals.isTransformational ? 5 : 6;
+
+        generated.resource_availability = [];
+        if (signals.isDigital) generated.resource_availability.push('technical_expertise');
+        if (investment > 5000000) generated.resource_availability.push('budget_approved');
+        if (signals.isCritical) generated.resource_availability.push('executive_sponsorship');
+        generated.resource_availability.push('team_capacity');
+
+        const startDate = new Date();
+        startDate.setMonth(startDate.getMonth() + 1);
+        const endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + timelineMonths);
+
+        generated.timeline = {
+            start_date: startDate.toISOString().split('T')[0],
+            end_date: endDate.toISOString().split('T')[0],
+            confidence: signals.isQuickWin ? 'high' : signals.isTransformational ? 'low' : 'medium'
+        };
+
+        generated.mira_integration = {
+            layer: signals.hasAI ? 3 : signals.isDigital ? 2 : 1,
+            depth: signals.hasAI ? 'high' : 'medium',
+            multiple_layers: signals.hasAI && signals.isTransformational,
+            monetization_clarity: signals.hasAI ? 'clear' : 'partial'
+        };
+
+        // ===== SECTION 6: DEPENDENCIES (Criteria 28-30) =====
+        generated.prerequisites = signals.isCritical ?
+            ['Budget approval from CFO', 'Executive steering committee formation', 'Vendor selection completed'] :
+            ['Initial assessment completed', 'Resources allocated'];
+
+        generated.enablers = signals.isDigital ?
+            ['Cloud infrastructure ready', 'API gateway operational', 'Security framework updated'] :
+            ['Process documentation', 'Training materials'];
+
+        generated.integration_points = signals.isDigital ?
+            ['Oracle ERP', 'MiRA AI Platform', 'Power BI'] :
+            ['Existing ERP', 'Reporting systems'];
+
+        // ===== SECTION 7: RAID (Criteria 31-34) =====
+        generated.risks = [
+            { name: signals.isCritical ? 'Critical path dependency failure' : 'Timeline overrun', impact: 'high', probability: 'medium', mitigation: 'Weekly steering committee reviews' },
+            { name: 'Resource availability constraints', impact: 'medium', probability: 'medium', mitigation: 'Flexible staffing model' }
+        ];
+
+        generated.assumptions = [
+            'Executive sponsorship maintained throughout project lifecycle',
+            'No major organizational restructuring during implementation',
+            signals.isDigital ? 'IT infrastructure upgrades completed on schedule' : 'Existing systems remain stable'
+        ];
+
+        generated.issues = [];
+
+        generated.dependency_count = signals.isCritical ? 8 : signals.isDigital ? 5 : 3;
+
+        // ===== SECTION 8: SUCCESS METRICS (Criteria 35-37) =====
+        generated.success_criteria = signals.isHighValue ?
+            ['ROI target of 180% achieved by Year 3', 'User adoption >85% within 6 months', 'Zero critical defects in production'] :
+            ['On-time delivery within ±10%', 'Budget variance <5%', 'Stakeholder satisfaction >4/5'];
+
+        generated.kpis = [
+            { name: 'Financial ROI', target: signals.isHighValue ? '180%' : '140%', frequency: 'quarterly' },
+            { name: 'User Adoption Rate', target: '85%', frequency: 'monthly' },
+            { name: 'System Availability', target: '99.5%', frequency: 'daily' }
+        ];
+
+        generated.governance = {
+            review_frequency: signals.isCritical ? 'weekly' : 'monthly',
+            owner_role: 'Program Manager',
+            escalation_path: 'PM → VP → CITO → CEO'
+        };
+
         return generated;
     }
 }
