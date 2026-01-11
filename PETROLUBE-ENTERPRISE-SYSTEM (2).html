@@ -5409,27 +5409,35 @@ function renderWizard() {
     });
     const completeness = Math.round((completed / (mandatoryFields.length + 1)) * 100);
 
+    const stepNames = [
+        { short: 'AI Describe', long: 'AI-Powered Description' },
+        { short: 'Basic Info', long: 'Metadata & Identification' },
+        { short: 'Strategic', long: 'Strategic Positioning' },
+        { short: 'Details', long: 'Business Case & Implementation' },
+        { short: 'Review', long: 'Review & Submit' }
+    ];
+
     let html = `
         <div class="wizard-steps">
             ${[1, 2, 3, 4, 5].map(s => `
                 <div class="wizard-step ${state.wizardStep === s ? 'active' : state.wizardStep > s ? 'completed' : ''}">
-                    <div class="wizard-step-circle">${s}</div>
+                    <div class="wizard-step-circle">${state.wizardStep > s ? '✓' : s}</div>
                     <div class="wizard-step-label">
-                        ${['AI Describe', 'Header', 'Strategic', 'Scoring', 'Review'][s - 1]}
+                        ${stepNames[s - 1].short}
                     </div>
                 </div>
             `).join('')}
         </div>
 
-        <div class="card mb-6">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                <h3 style="font-size: 15px; color: var(--petro-green-800); font-weight: 700;">Completion Progress</h3>
-                <div style="font-size: 24px; font-weight: 800; color: var(--petro-green-700);">${completeness}%</div>
+        <div style="background: linear-gradient(135deg, #0d5530 0%, #1a7a4a 100%); border-radius: 12px; padding: 16px; margin: 24px 0; color: white;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 15px; font-weight: 700; color: white;">Completion Progress</h3>
+                <div style="font-size: 28px; font-weight: 800;">${completeness}%</div>
             </div>
-            <div class="progress-bar" style="height: 12px;">
-                <div class="progress-fill" style="width: ${completeness}%"></div>
+            <div class="progress-bar" style="height: 8px; background: rgba(255,255,255,0.2);">
+                <div class="progress-fill" style="width: ${completeness}%; background: white;"></div>
             </div>
-            <div style="margin-top: 8px; font-size: 13px; color: var(--neutral-600);">
+            <div style="margin-top: 8px; font-size: 13px; opacity: 0.9;">
                 ${completed} of ${mandatoryFields.length + 1} required fields completed
             </div>
         </div>
@@ -5496,15 +5504,28 @@ function renderWizardStep2(template) {
     const fields = template.fields.filter(f => f.category === 'metadata');
 
     return `
-        <div class="section-header">Section 1: Metadata & Identification</div>
-        <p style="color: var(--neutral-600); margin-bottom: 24px;">Basic initiative information and strategic classification</p>
-        <div class="grid grid-2">
-            ${fields.map(field => renderFieldInput(field)).join('')}
+        <div style="margin-bottom: 32px;">
+            <h3 style="font-size: 20px; font-weight: 800; color: var(--neutral-900); margin-bottom: 8px;">
+                📋 Step 2: Basic Information
+            </h3>
+            <p style="color: var(--neutral-600); font-size: 14px;">
+                Define the initiative's core identity and strategic classification (${fields.length} fields)
+            </p>
+        </div>
+
+        <div class="card" style="padding: 24px; background: var(--neutral-50); margin-bottom: 24px;">
+            <div class="grid grid-2">
+                ${fields.map(field => renderFieldInput(field)).join('')}
+            </div>
         </div>
 
         <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="wizardPrev()">← Back</button>
-            <button class="btn btn-primary" onclick="wizardNext(2)">Next: Strategic →</button>
+            <button class="btn btn-secondary" onclick="wizardPrev()">
+                ← Back to AI Description
+            </button>
+            <button class="btn btn-primary" onclick="wizardNext(2)">
+                Next: Strategic Positioning →
+            </button>
         </div>
     `;
 }
@@ -5513,15 +5534,35 @@ function renderWizardStep3(template) {
     const fields = template.fields.filter(f => f.category === 'strategic');
 
     return `
-        <div class="section-header">Section 2: Strategic Positioning</div>
-        <p style="color: var(--neutral-600); margin-bottom: 24px;">Priority, tier, competitive response, and BCG i2i impact</p>
-        <div class="grid grid-2">
-            ${fields.map(field => renderFieldInput(field)).join('')}
+        <div style="margin-bottom: 32px;">
+            <h3 style="font-size: 20px; font-weight: 800; color: var(--neutral-900); margin-bottom: 8px;">
+                🎯 Step 3: Strategic Positioning
+            </h3>
+            <p style="color: var(--neutral-600); font-size: 14px;">
+                Define priority level, tier assignment, competitive response strategy, and BCG i2i dimensions (${fields.length} fields)
+            </p>
+        </div>
+
+        <div class="card" style="padding: 24px; background: var(--neutral-50); margin-bottom: 24px;">
+            <div class="grid grid-2">
+                ${fields.map(field => renderFieldInput(field)).join('')}
+            </div>
+        </div>
+
+        <div style="background: var(--blue-50); border-left: 4px solid var(--blue-600); padding: 12px 16px; border-radius: 6px; margin-bottom: 24px;">
+            <div style="font-weight: 700; color: var(--blue-900); margin-bottom: 4px;">💡 Tip</div>
+            <div style="font-size: 13px; color: var(--blue-700);">
+                Strategic Priority and Tier will influence the automatic 6-dimension scoring in the final step. Choose values that reflect true business criticality.
+            </div>
         </div>
 
         <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="wizardPrev()">← Back</button>
-            <button class="btn btn-primary" onclick="wizardNext(3)">Next: Business Case →</button>
+            <button class="btn btn-secondary" onclick="wizardPrev()">
+                ← Back to Basic Info
+            </button>
+            <button class="btn btn-primary" onclick="wizardNext(3)">
+                Next: Business & Implementation →
+            </button>
         </div>
     `;
 }
@@ -5530,23 +5571,93 @@ function renderWizardStep4(template) {
     const businessFields = template.fields.filter(f => f.category === 'business_case');
     const implFields = template.fields.filter(f => f.category === 'implementation');
     const depFields = template.fields.filter(f => f.category === 'dependencies');
+    const raidFields = template.fields.filter(f => f.category === 'raid');
+    const metricsFields = template.fields.filter(f => f.category === 'metrics');
+
+    const totalFields = businessFields.length + implFields.length + depFields.length + raidFields.length + metricsFields.length;
 
     return `
-        <div class="section-header">Section 4: Business Case</div>
-        <p style="color: var(--neutral-600); margin-bottom: 24px;">Problem, solution, financials, and strategic rationale</p>
-        <div class="grid grid-2">
-            ${businessFields.slice(0, 5).map(field => renderFieldInput(field)).join('')}
+        <div style="margin-bottom: 32px;">
+            <h3 style="font-size: 20px; font-weight: 800; color: var(--neutral-900); margin-bottom: 8px;">
+                📊 Step 4: Business Details & Implementation
+            </h3>
+            <p style="color: var(--neutral-600); font-size: 14px;">
+                Complete business case, implementation plan, dependencies, risks, and success metrics (${totalFields} fields)
+            </p>
         </div>
 
-        <div class="section-header" style="margin-top: 32px;">Section 5: Implementation</div>
-        <p style="color: var(--neutral-600); margin-bottom: 24px;">TRL, resources, timeline, and MiRA integration</p>
-        <div class="grid grid-2">
-            ${implFields.map(field => renderFieldInput(field)).join('')}
+        ${businessFields.length > 0 ? `
+            <div class="card" style="padding: 24px; margin-bottom: 24px; background: white;">
+                <h4 style="font-size: 16px; font-weight: 700; color: var(--petro-green-800); margin-bottom: 16px; border-bottom: 2px solid var(--petro-green-200); padding-bottom: 8px;">
+                    💼 Business Case (${businessFields.length} fields)
+                </h4>
+                <div class="grid grid-2">
+                    ${businessFields.map(field => renderFieldInput(field)).join('')}
+                </div>
+            </div>
+        ` : ''}
+
+        ${implFields.length > 0 ? `
+            <div class="card" style="padding: 24px; margin-bottom: 24px; background: white;">
+                <h4 style="font-size: 16px; font-weight: 700; color: var(--petro-green-800); margin-bottom: 16px; border-bottom: 2px solid var(--petro-green-200); padding-bottom: 8px;">
+                    ⚙️ Implementation Plan (${implFields.length} fields)
+                </h4>
+                <div class="grid grid-2">
+                    ${implFields.map(field => renderFieldInput(field)).join('')}
+                </div>
+            </div>
+        ` : ''}
+
+        ${depFields.length > 0 ? `
+            <div class="card" style="padding: 24px; margin-bottom: 24px; background: white;">
+                <h4 style="font-size: 16px; font-weight: 700; color: var(--petro-green-800); margin-bottom: 16px; border-bottom: 2px solid var(--petro-green-200); padding-bottom: 8px;">
+                    🔗 Dependencies & Enablers (${depFields.length} fields)
+                </h4>
+                <div class="grid grid-2">
+                    ${depFields.map(field => renderFieldInput(field)).join('')}
+                </div>
+            </div>
+        ` : ''}
+
+        ${raidFields.length > 0 ? `
+            <div class="card" style="padding: 24px; margin-bottom: 24px; background: white;">
+                <h4 style="font-size: 16px; font-weight: 700; color: var(--petro-green-800); margin-bottom: 16px; border-bottom: 2px solid var(--petro-green-200); padding-bottom: 8px;">
+                    ⚠️ RAID Log (${raidFields.length} fields)
+                </h4>
+                <p style="font-size: 13px; color: var(--neutral-600); margin-bottom: 16px;">
+                    Risks, Assumptions, Issues, and Dependencies tracking
+                </p>
+                <div class="grid grid-2">
+                    ${raidFields.map(field => renderFieldInput(field)).join('')}
+                </div>
+            </div>
+        ` : ''}
+
+        ${metricsFields.length > 0 ? `
+            <div class="card" style="padding: 24px; margin-bottom: 24px; background: white;">
+                <h4 style="font-size: 16px; font-weight: 700; color: var(--petro-green-800); margin-bottom: 16px; border-bottom: 2px solid var(--petro-green-200); padding-bottom: 8px;">
+                    📈 Success Metrics & Governance (${metricsFields.length} fields)
+                </h4>
+                <div class="grid grid-2">
+                    ${metricsFields.map(field => renderFieldInput(field)).join('')}
+                </div>
+            </div>
+        ` : ''}
+
+        <div style="background: var(--blue-50); border-left: 4px solid var(--blue-600); padding: 12px 16px; border-radius: 6px; margin-bottom: 24px;">
+            <div style="font-weight: 700; color: var(--blue-900); margin-bottom: 4px;">💡 Tip</div>
+            <div style="font-size: 13px; color: var(--blue-700);">
+                All these details will be used to calculate your initiative's 6-dimension scores (D1-D6). The more accurate your inputs, the better the prioritization results.
+            </div>
         </div>
 
         <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="wizardPrev()">← Back</button>
-            <button class="btn btn-primary" onclick="wizardNext(4)">Next: Review →</button>
+            <button class="btn btn-secondary" onclick="wizardPrev()">
+                ← Back to Strategic Positioning
+            </button>
+            <button class="btn btn-primary" onclick="wizardNext(4)">
+                Next: Review & Score →
+            </button>
         </div>
     `;
 }
