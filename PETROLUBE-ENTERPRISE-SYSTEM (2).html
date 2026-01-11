@@ -219,6 +219,10 @@ nav {
     grid-template-columns: repeat(4, 1fr);
 }
 
+.grid-5 {
+    grid-template-columns: repeat(5, 1fr);
+}
+
 .mb-4 {
     margin-bottom: 16px;
 }
@@ -724,7 +728,105 @@ const SAMPLE_PROJECTS = [
             compositeScore: 87.5,
             rank: 1
         },
-        createdAt: '2025-01-05T10:00:00Z'
+        createdAt: '2025-01-05T10:00:00Z',
+        // ===== POST-APPROVAL LIFECYCLE (Activated after AGB approval) =====
+        lifecycle: {
+            activated: false, // Set to true when AGB approves
+            currentGate: 'gate_0', // gate_0, gate_1, gate_2, gate_3, gate_4, gate_5
+            currentPhase: 'approval', // approval, phase_0, phase_1, phase_2, phase_3, phase_4
+            projectStatus: 'PENDING_APPROVAL', // GREEN, YELLOW, RED, BLUE, BLACK, COMPLETED, TERMINATED, PENDING_APPROVAL
+            projectStartDate: null, // GO decision date + 5 business days
+            projectEndDate: null, // Final phase end + 30 days
+            handoverDate: null, // Date of formal handover from approval to delivery
+            gateHistory: [], // Array of {gate, decision, date, reviewer, conditions}
+            phases: {
+                phase_0: {
+                    name: 'Initiation',
+                    status: 'not_started',
+                    startDate: null,
+                    endDate: null,
+                    milestones: []
+                },
+                phase_1: {
+                    name: 'Development/Pilot',
+                    status: 'not_started',
+                    startDate: null,
+                    endDate: null,
+                    milestones: []
+                },
+                phase_2: {
+                    name: 'Scale/Deployment',
+                    status: 'not_started',
+                    startDate: null,
+                    endDate: null,
+                    milestones: []
+                },
+                phase_3: {
+                    name: 'Optimization',
+                    status: 'not_started',
+                    startDate: null,
+                    endDate: null,
+                    milestones: []
+                },
+                phase_4: {
+                    name: 'Closure',
+                    status: 'not_started',
+                    startDate: null,
+                    endDate: null,
+                    milestones: []
+                }
+            },
+            tier: 'tier_1a', // tier_1a, tier_1b, tier_1c, tier_1d, contingent
+            owner: {
+                primary: null,
+                backup: null,
+                escalationPath: 'CITO'
+            }
+        },
+        performance: {
+            // Earned Value Management metrics
+            budgetBaseline: 0,
+            plannedValue: 0, // PV: Budget × Planned % Complete
+            earnedValue: 0, // EV: Budget × Actual % Complete
+            actualCost: 0, // AC: Actual spend to date
+            schedulePerformanceIndex: 1.0, // SPI: EV / PV
+            costPerformanceIndex: 1.0, // CPI: EV / AC
+            scheduleVariance: 0, // SV: EV - PV
+            costVariance: 0, // CV: EV - AC
+            estimateAtCompletion: 0, // EAC: Planned Duration / SPI
+            lastUpdated: null
+        },
+        changeRequests: [], // Array of change request objects
+        riskRegister: {
+            risks: [], // RAID: Risks
+            assumptions: [], // RAID: Assumptions
+            issues: [], // RAID: Issues
+            dependencies: [] // RAID: Dependencies
+        },
+        benefitsTracking: {
+            baselineSet: false,
+            financialBenefits: {
+                projectedRevenue: 0,
+                actualRevenue: 0,
+                projectedCostSavings: 0,
+                actualCostSavings: 0
+            },
+            operationalBenefits: [],
+            strategicBenefits: [],
+            kpis: []
+        },
+        closureData: {
+            status: 'active', // active, in_closure, closed
+            closureType: null, // successful, terminated, delivery
+            closureApprovedBy: null,
+            closureDate: null,
+            lessonsLearned: [],
+            postImplementationReview: {
+                scheduled: false,
+                completed: false,
+                findings: []
+            }
+        }
     },
     {
         id: 'proj-2',
@@ -1237,10 +1339,13 @@ function renderPMOManager() {
                         onclick="setPMOView('gantt')">📊 Portfolio Gantt Chart</button>
                 <button class="btn ${pmoView === 'raci' ? 'btn-primary' : 'btn-secondary'}" style="border-radius: 8px 8px 0 0;"
                         onclick="setPMOView('raci')">👥 RACI Matrix</button>
+                <button class="btn ${pmoView === 'lifecycle' ? 'btn-primary' : 'btn-secondary'}" style="border-radius: 8px 8px 0 0;"
+                        onclick="setPMOView('lifecycle')">🎯 Lifecycle & Performance</button>
             </div>
 
             ${pmoView === 'gantt' ? renderPortfolioGantt() : ''}
             ${pmoView === 'raci' ? renderRACIMatrix() : ''}
+            ${pmoView === 'lifecycle' ? renderLifecycleDashboard() : ''}
             ${pmoView === 'tasks' ? `
             <div class="grid grid-4 mb-6">
                 ${[
@@ -1583,6 +1688,149 @@ function renderRACIMatrix() {
                 <strong>Team Members:</strong> ${people.length} |
                 <strong>RACI Assignments:</strong> ${tasks.reduce((sum, t) => sum + (t.raci ?
                     [...(t.raci.responsible || []), ...(t.raci.accountable || []), ...(t.raci.consulted || []), ...(t.raci.informed || [])].length : 0), 0)}
+            </div>
+        </div>
+    `;
+}
+
+// ============================================================================
+// LIFECYCLE & PERFORMANCE DASHBOARD
+// ============================================================================
+
+function renderLifecycleDashboard() {
+    const approvedProjects = state.projects.filter(p => p.lifecycle?.activated);
+
+    if (approvedProjects.length === 0) {
+        return `
+            <div class="card" style="padding: 60px; text-align: center;">
+                <div style="font-size: 64px; margin-bottom: 16px;">🎯</div>
+                <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">No Approved Projects Yet</h3>
+                <p style="color: var(--neutral-600);">Projects will appear here after AGB approval activates the lifecycle</p>
+            </div>
+        `;
+    }
+
+    // Calculate portfolio statistics
+    const statusCounts = {
+        GREEN: approvedProjects.filter(p => p.lifecycle.projectStatus === 'GREEN').length,
+        YELLOW: approvedProjects.filter(p => p.lifecycle.projectStatus === 'YELLOW').length,
+        RED: approvedProjects.filter(p => p.lifecycle.projectStatus === 'RED').length,
+        BLUE: approvedProjects.filter(p => p.lifecycle.projectStatus === 'BLUE').length,
+        BLACK: approvedProjects.filter(p => p.lifecycle.projectStatus === 'BLACK').length
+    };
+
+    const avgSPI = approvedProjects.reduce((sum, p) => sum + (p.performance?.schedulePerformanceIndex || 0), 0) / approvedProjects.length;
+    const avgCPI = approvedProjects.reduce((sum, p) => sum + (p.performance?.costPerformanceIndex || 0), 0) / approvedProjects.length;
+
+    return `
+        <div>
+            <!-- Portfolio Health Overview -->
+            <div class="grid grid-5 mb-6">
+                ${[
+                    { status: 'GREEN', icon: '🟢', label: 'On Track', count: statusCounts.GREEN },
+                    { status: 'YELLOW', icon: '🟡', label: 'At Risk', count: statusCounts.YELLOW },
+                    { status: 'RED', icon: '🔴', label: 'Critical', count: statusCounts.RED },
+                    { status: 'BLUE', icon: '🔵', label: 'On Hold', count: statusCounts.BLUE },
+                    { status: 'BLACK', icon: '⬛', label: 'Recovery', count: statusCounts.BLACK }
+                ].map(stat => `
+                    <div class="card" style="padding: 20px; text-align: center; border-left: 4px solid ${
+                        stat.status === 'GREEN' ? 'var(--green-600)' :
+                        stat.status === 'YELLOW' ? 'var(--orange-600)' :
+                        stat.status === 'RED' ? 'var(--red-600)' :
+                        stat.status === 'BLUE' ? 'var(--blue-600)' : 'var(--neutral-600)'
+                    };">
+                        <div style="font-size: 32px; margin-bottom: 8px;">${stat.icon}</div>
+                        <div style="font-size: 24px; font-weight: 800; margin-bottom: 4px;">${stat.count}</div>
+                        <div style="font-size: 11px; color: var(--neutral-600); font-weight: 600; text-transform: uppercase;">${stat.label}</div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <!-- Portfolio Performance Metrics -->
+            <div class="grid grid-2 mb-6">
+                <div class="card" style="padding: 24px;">
+                    <h4 style="font-size: 14px; color: var(--neutral-600); margin-bottom: 12px;">📈 Avg Schedule Performance</h4>
+                    <div style="font-size: 36px; font-weight: 900; color: ${avgSPI >= 0.95 ? 'var(--green-600)' : avgSPI >= 0.80 ? 'var(--orange-600)' : 'var(--red-600)'};">
+                        ${avgSPI.toFixed(2)}
+                    </div>
+                    <div style="font-size: 12px; color: var(--neutral-600); margin-top: 4px;">SPI ${avgSPI >= 1 ? '(Ahead)' : avgSPI >= 0.95 ? '(On Track)' : avgSPI >= 0.80 ? '(At Risk)' : '(Delayed)'}</div>
+                </div>
+                <div class="card" style="padding: 24px;">
+                    <h4 style="font-size: 14px; color: var(--neutral-600); margin-bottom: 12px;">💰 Avg Cost Performance</h4>
+                    <div style="font-size: 36px; font-weight: 900; color: ${avgCPI >= 0.95 ? 'var(--green-600)' : avgCPI >= 0.80 ? 'var(--orange-600)' : 'var(--red-600)'};">
+                        ${avgCPI.toFixed(2)}
+                    </div>
+                    <div style="font-size: 12px; color: var(--neutral-600); margin-top: 4px;">CPI ${avgCPI >= 1 ? '(Under Budget)' : avgCPI >= 0.95 ? '(On Budget)' : avgCPI >= 0.80 ? '(At Risk)' : '(Over Budget)'}</div>
+                </div>
+            </div>
+
+            <!-- Project List with Lifecycle Status -->
+            <div class="card" style="padding: 24px;">
+                <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 20px;">🎯 Active Projects - Stage-Gate Lifecycle</h3>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Project</th>
+                            <th>Status</th>
+                            <th>Current Gate</th>
+                            <th>Phase</th>
+                            <th>SPI</th>
+                            <th>CPI</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${approvedProjects.map(project => {
+                            const lifecycle = project.lifecycle;
+                            const performance = project.performance || {};
+
+                            return `
+                                <tr onclick="selectPMOProject('${project.id}'); setPMOView('tasks');" style="cursor: pointer;">
+                                    <td>
+                                        <strong>${project.criteriaValues?.initiative_name || project.name}</strong>
+                                        <div style="font-size: 11px; color: var(--neutral-600);">${project.criteriaValues?.initiative_id || project.id}</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge ${getStatusBadgeClass(lifecycle.projectStatus)}" style="display: inline-flex; align-items: center; gap: 4px;">
+                                            ${getStatusIcon(lifecycle.projectStatus)} ${lifecycle.projectStatus}
+                                        </span>
+                                    </td>
+                                    <td style="font-size: 12px;">${getGateName(lifecycle.currentGate).replace('Gate ', 'G')}</td>
+                                    <td>
+                                        <span class="badge badge-blue">${lifecycle.phases[lifecycle.currentPhase]?.name || lifecycle.currentPhase}</span>
+                                    </td>
+                                    <td>
+                                        <div style="font-weight: 700; color: ${performance.schedulePerformanceIndex >= 0.95 ? 'var(--green-600)' : performance.schedulePerformanceIndex >= 0.80 ? 'var(--orange-600)' : 'var(--red-600)'};">
+                                            ${(performance.schedulePerformanceIndex || 1.0).toFixed(2)}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="font-weight: 700; color: ${performance.costPerformanceIndex >= 0.95 ? 'var(--green-600)' : performance.costPerformanceIndex >= 0.80 ? 'var(--orange-600)' : 'var(--red-600)'};">
+                                            ${(performance.costPerformanceIndex || 1.0).toFixed(2)}
+                                        </div>
+                                    </td>
+                                    <td style="font-size: 12px;">${lifecycle.projectStartDate || 'TBD'}</td>
+                                    <td style="font-size: 12px;">${lifecycle.projectEndDate || 'TBD'}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Legend -->
+            <div style="margin-top: 16px; padding: 16px; background: var(--blue-50); border-radius: 8px;">
+                <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Performance Indices:</div>
+                <div style="font-size: 12px; color: var(--neutral-700); display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                    <div><strong>SPI (Schedule Performance Index):</strong> EV / PV - Measures schedule efficiency</div>
+                    <div><strong>CPI (Cost Performance Index):</strong> EV / AC - Measures cost efficiency</div>
+                    <div><span style="color: var(--green-600);">●</span> ≥0.95 = GREEN (On Track)</div>
+                    <div><span style="color: var(--orange-600);">●</span> 0.80-0.94 = YELLOW (At Risk)</div>
+                    <div><span style="color: var(--red-600);">●</span> <0.80 = RED (Critical)</div>
+                    <div><span style="color: var(--blue-600);">●</span> BLUE = On Hold (Dependency Block)</div>
+                </div>
             </div>
         </div>
     `;
@@ -3293,6 +3541,19 @@ function updateTaskStatus(projectId, taskIndex, newStatus) {
     if (!project || !project.tasks || !project.tasks[taskIndex]) return;
 
     project.tasks[taskIndex].status = newStatus;
+
+    // Auto-update progress based on status
+    if (newStatus === 'completed') {
+        project.tasks[taskIndex].progress = 100;
+    } else if (newStatus === 'in_progress' && project.tasks[taskIndex].progress === 0) {
+        project.tasks[taskIndex].progress = 50;
+    }
+
+    // Recalculate project performance if lifecycle is activated
+    if (project.lifecycle?.activated) {
+        updateProjectPerformance(project);
+    }
+
     render();
 }
 
@@ -3542,10 +3803,294 @@ function submitAGBReview(approved) {
     // Update project status
     project.status = approved ? 'approved' : 'rejected';
 
+    // ===== ACTIVATE POST-APPROVAL LIFECYCLE =====
+    if (approved) {
+        activateProjectLifecycle(project);
+    }
+
     state.selectedReviewProject = null;
     render();
 
-    alert(`Project ${approved ? 'approved' : 'rejected'} successfully!\nCompliance Score: ${compliance}%`);
+    alert(`Project ${approved ? 'approved' : 'rejected'} successfully!\nCompliance Score: ${compliance}%${approved ? '\n\n✅ Post-Approval Lifecycle Activated\nProject transitioned to Stage-Gate execution model' : ''}`);
+}
+
+// ============================================================================
+// POST-APPROVAL LIFECYCLE ACTIVATION
+// ============================================================================
+
+function activateProjectLifecycle(project) {
+    const today = new Date();
+    const handoverDate = new Date(today);
+    handoverDate.setDate(handoverDate.getDate() + 5); // 5 business days handover period
+
+    // Calculate project end date from implementation timeline
+    const startDate = project.criteriaValues?.implementation_timeline?.start_date;
+    const endDate = project.criteriaValues?.implementation_timeline?.end_date;
+    const projectEndDate = endDate ? new Date(endDate) : new Date(handoverDate.getTime() + 365 * 24 * 60 * 60 * 1000);
+    projectEndDate.setDate(projectEndDate.getDate() + 30); // Add 30 days for post-implementation review
+
+    // Initialize lifecycle if not exists
+    if (!project.lifecycle) {
+        project.lifecycle = {
+            activated: false,
+            currentGate: 'gate_0',
+            currentPhase: 'approval',
+            projectStatus: 'PENDING_APPROVAL',
+            projectStartDate: null,
+            projectEndDate: null,
+            handoverDate: null,
+            gateHistory: [],
+            phases: {
+                phase_0: { name: 'Initiation', status: 'not_started', startDate: null, endDate: null, milestones: [] },
+                phase_1: { name: 'Development/Pilot', status: 'not_started', startDate: null, endDate: null, milestones: [] },
+                phase_2: { name: 'Scale/Deployment', status: 'not_started', startDate: null, endDate: null, milestones: [] },
+                phase_3: { name: 'Optimization', status: 'not_started', startDate: null, endDate: null, milestones: [] },
+                phase_4: { name: 'Closure', status: 'not_started', startDate: null, endDate: null, milestones: [] }
+            },
+            tier: 'tier_1c',
+            owner: { primary: null, backup: null, escalationPath: 'CITO' }
+        };
+    }
+
+    // Activate lifecycle
+    project.lifecycle.activated = true;
+    project.lifecycle.currentGate = 'gate_1'; // Move to Gate 1 (Concept Validation)
+    project.lifecycle.currentPhase = 'phase_0'; // Initiation phase
+    project.lifecycle.projectStatus = 'GREEN'; // Start as GREEN
+    project.lifecycle.projectStartDate = handoverDate.toISOString().split('T')[0];
+    project.lifecycle.projectEndDate = projectEndDate.toISOString().split('T')[0];
+    project.lifecycle.handoverDate = handoverDate.toISOString();
+
+    // Record Gate 0 passage (approval)
+    project.lifecycle.gateHistory.push({
+        gate: 'gate_0',
+        decision: 'GO',
+        date: today.toISOString(),
+        reviewer: 'AGB Board',
+        rationale: 'Al Dabbagh approval chain completed successfully',
+        conditions: []
+    });
+
+    // Set Phase 0 (Initiation) to in_progress
+    project.lifecycle.phases.phase_0.status = 'in_progress';
+    project.lifecycle.phases.phase_0.startDate = handoverDate.toISOString().split('T')[0];
+
+    // Calculate phase end dates (assuming 3-month initiation)
+    const phase0End = new Date(handoverDate);
+    phase0End.setMonth(phase0End.getMonth() + 3);
+    project.lifecycle.phases.phase_0.endDate = phase0End.toISOString().split('T')[0];
+
+    // Initialize performance metrics
+    if (!project.performance) {
+        project.performance = {
+            budgetBaseline: project.criteriaValues?.investment_required || 0,
+            plannedValue: 0,
+            earnedValue: 0,
+            actualCost: 0,
+            schedulePerformanceIndex: 1.0,
+            costPerformanceIndex: 1.0,
+            scheduleVariance: 0,
+            costVariance: 0,
+            estimateAtCompletion: 0,
+            lastUpdated: today.toISOString()
+        };
+    }
+    project.performance.budgetBaseline = project.criteriaValues?.investment_required || 0;
+
+    // Initialize RAID register if not exists
+    if (!project.riskRegister) {
+        project.riskRegister = {
+            risks: [],
+            assumptions: [],
+            issues: [],
+            dependencies: []
+        };
+    }
+
+    // Initialize benefits tracking
+    if (!project.benefitsTracking) {
+        project.benefitsTracking = {
+            baselineSet: true,
+            financialBenefits: {
+                projectedRevenue: 0,
+                actualRevenue: 0,
+                projectedCostSavings: project.criteriaValues?.roi_expected || 0,
+                actualCostSavings: 0
+            },
+            operationalBenefits: [],
+            strategicBenefits: [],
+            kpis: []
+        };
+    }
+
+    // Initialize closure data
+    if (!project.closureData) {
+        project.closureData = {
+            status: 'active',
+            closureType: null,
+            closureApprovedBy: null,
+            closureDate: null,
+            lessonsLearned: [],
+            postImplementationReview: { scheduled: false, completed: false, findings: [] }
+        };
+    }
+
+    // Add audit trail entry
+    project.auditTrail.push({
+        timestamp: today.toISOString(),
+        userId: 'system',
+        action: 'Post-Approval Lifecycle Activated',
+        details: `Project transitioned to Stage-Gate execution model. Gate 1 (Concept Validation) initiated. Handover date: ${handoverDate.toISOString().split('T')[0]}`
+    });
+
+    console.log('✅ Post-Approval Lifecycle Activated for:', project.criteriaValues?.initiative_name || project.name);
+}
+
+// ============================================================================
+// PERFORMANCE METRICS & STATUS CALCULATION
+// ============================================================================
+
+function updateProjectPerformance(project) {
+    if (!project.lifecycle || !project.lifecycle.activated) return;
+    if (!project.performance) return;
+
+    const tasks = project.tasks || [];
+    if (tasks.length === 0) return;
+
+    // Calculate Planned Value (PV) and Earned Value (EV)
+    const budget = project.performance.budgetBaseline;
+    let totalPlannedProgress = 0;
+    let totalActualProgress = 0;
+
+    tasks.forEach(task => {
+        const taskWeight = 1 / tasks.length; // Equal weight per task
+        const plannedProgress = calculatePlannedProgress(task);
+        const actualProgress = task.progress || 0;
+
+        totalPlannedProgress += plannedProgress * taskWeight;
+        totalActualProgress += actualProgress * taskWeight;
+    });
+
+    project.performance.plannedValue = budget * (totalPlannedProgress / 100);
+    project.performance.earnedValue = budget * (totalActualProgress / 100);
+
+    // Calculate indices
+    if (project.performance.plannedValue > 0) {
+        project.performance.schedulePerformanceIndex = project.performance.earnedValue / project.performance.plannedValue;
+    }
+    if (project.performance.actualCost > 0) {
+        project.performance.costPerformanceIndex = project.performance.earnedValue / project.performance.actualCost;
+    }
+
+    // Calculate variances
+    project.performance.scheduleVariance = project.performance.earnedValue - project.performance.plannedValue;
+    project.performance.costVariance = project.performance.earnedValue - project.performance.actualCost;
+
+    project.performance.lastUpdated = new Date().toISOString();
+
+    // Update project status based on performance
+    updateProjectStatus(project);
+}
+
+function calculatePlannedProgress(task) {
+    if (!task.startDate || !task.dueDate) return 0;
+
+    const start = new Date(task.startDate);
+    const end = new Date(task.dueDate);
+    const today = new Date();
+
+    if (today < start) return 0;
+    if (today > end) return 100;
+
+    const totalDays = (end - start) / (1000 * 60 * 60 * 24);
+    const elapsedDays = (today - start) / (1000 * 60 * 60 * 24);
+
+    return Math.min(100, (elapsedDays / totalDays) * 100);
+}
+
+function updateProjectStatus(project) {
+    if (!project.lifecycle || !project.lifecycle.activated) return;
+    if (!project.performance) return;
+
+    const spi = project.performance.schedulePerformanceIndex;
+    const cpi = project.performance.costPerformanceIndex;
+
+    // Check for HIGH+ risks
+    const hasHighRisk = project.riskRegister?.risks?.some(r => r.score >= 10) || false;
+    const hasCatastrophicRisk = project.riskRegister?.risks?.some(r => r.score >= 17) || false;
+
+    // Status determination logic (per PETROLUBE Post-Approval Lifecycle Model)
+    let newStatus = 'GREEN';
+
+    if (hasCatastrophicRisk) {
+        newStatus = 'BLACK'; // Recovery mode
+    } else if (spi < 0.80 || cpi < 0.80) {
+        newStatus = 'RED'; // Delayed/Critical
+    } else if (hasHighRisk || (spi >= 0.80 && spi < 0.95) || (cpi >= 0.80 && cpi < 0.95)) {
+        newStatus = 'YELLOW'; // At Risk
+    } else if (spi >= 0.95 && cpi >= 0.95 && !hasHighRisk) {
+        newStatus = 'GREEN'; // On Track
+    }
+
+    // Check if project is on hold due to dependencies
+    const hasBlockedDependency = project.riskRegister?.dependencies?.some(d => d.status === 'blocked') || false;
+    if (hasBlockedDependency && newStatus !== 'BLACK') {
+        newStatus = 'BLUE'; // On Hold
+    }
+
+    // Update status if changed
+    if (project.lifecycle.projectStatus !== newStatus) {
+        const oldStatus = project.lifecycle.projectStatus;
+        project.lifecycle.projectStatus = newStatus;
+
+        // Add audit trail
+        project.auditTrail.push({
+            timestamp: new Date().toISOString(),
+            userId: 'system',
+            action: `Project status changed: ${oldStatus} → ${newStatus}`,
+            details: `SPI: ${spi.toFixed(2)}, CPI: ${cpi.toFixed(2)}, High Risks: ${hasHighRisk ? 'Yes' : 'No'}`
+        });
+    }
+}
+
+function getStatusBadgeClass(status) {
+    const statusMap = {
+        'GREEN': 'badge-green',
+        'YELLOW': 'badge-orange',
+        'RED': 'badge-red',
+        'BLUE': 'badge-blue',
+        'BLACK': 'badge-gray',
+        'COMPLETED': 'badge-green',
+        'TERMINATED': 'badge-red',
+        'PENDING_APPROVAL': 'badge-gray'
+    };
+    return statusMap[status] || 'badge-gray';
+}
+
+function getStatusIcon(status) {
+    const iconMap = {
+        'GREEN': '🟢',
+        'YELLOW': '🟡',
+        'RED': '🔴',
+        'BLUE': '🔵',
+        'BLACK': '⬛',
+        'COMPLETED': '✅',
+        'TERMINATED': '❌',
+        'PENDING_APPROVAL': '⏳'
+    };
+    return iconMap[status] || '⚪';
+}
+
+function getGateName(gate) {
+    const gateNames = {
+        'gate_0': 'Gate 0: Idea Screening',
+        'gate_1': 'Gate 1: Concept Validation',
+        'gate_2': 'Gate 2: Pilot Validation (CFO Proof-Gate)',
+        'gate_3': 'Gate 3: Scale Readiness',
+        'gate_4': 'Gate 4: Deployment Approval',
+        'gate_5': 'Gate 5: Post-Launch Review'
+    };
+    return gateNames[gate] || gate;
 }
 
 function cancelReview() {
