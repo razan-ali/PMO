@@ -5400,8 +5400,14 @@ function renderModals() {
 function renderWizard() {
     const data = state.store.getData();
     const template = data.templates[0];
+
+    if (!template || !template.fields) {
+        console.error('Template or template fields not found');
+        return;
+    }
+
     const mandatoryFields = template.fields.filter(f => f.required);
-    
+
     let completed = 0;
     if (state.wizardData.description) completed++;
     mandatoryFields.forEach(f => {
@@ -5449,7 +5455,12 @@ function renderWizard() {
     else if (state.wizardStep === 4) html += renderWizardStep4(template);
     else if (state.wizardStep === 5) html += renderWizardStep5(template);
 
-    document.getElementById('wizardContent').innerHTML = html;
+    const wizardContent = document.getElementById('wizardContent');
+    if (wizardContent) {
+        wizardContent.innerHTML = html;
+    } else {
+        console.error('wizardContent element not found');
+    }
 }
 
 function renderWizardStep1() {
@@ -6143,8 +6154,15 @@ function openProjectWizard() {
     state.wizardStep = 1;
     state.wizardData = { criteriaValues: {} };
     state.showDescriptionBox = true;
-    document.getElementById('projectWizardModal').classList.add('active');
-    renderWizard();
+
+    const modal = document.getElementById('projectWizardModal');
+    if (modal) {
+        modal.classList.add('active');
+        // Use setTimeout to ensure DOM is ready
+        setTimeout(() => renderWizard(), 0);
+    } else {
+        console.error('projectWizardModal not found');
+    }
 }
 
 function closeProjectWizard() {
