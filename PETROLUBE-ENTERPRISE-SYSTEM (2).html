@@ -1170,430 +1170,664 @@ footer a {
 // PETROLUBE 35-CRITERIA TEMPLATE
 // ============================================================================
 
+// PETROLUBE 35-CRITERIA FRAMEWORK V14
+// Complete input-to-prioritization flow
+
 const PETROLUBE_35_TEMPLATE = {
-    id: 'template-petrolube-35',
-    name: 'Petrolube Initiative Dossier - 35 Criteria V14',
+    id: 'template-petrolube-35-v14',
+    name: 'Petrolube Initiative Dossier - 35 Criteria Framework V14',
+    version: '1.0',
     is_published: true,
     created_at: '2025-01-11T00:00:00Z',
-    description: 'Enterprise initiative evaluation framework for capturing quantitative and qualitative inputs for scoring and prioritization',
+    description: 'Complete flow: 35 criteria → 6 dimensions → composite score → tier → rank',
+
+    // Scoring configuration
+    scoringConfig: {
+        dimensions: ['D1', 'D2', 'D3', 'D4', 'D5', 'D6'],
+        scenarios: {
+            A: { d1: 0.25, d2: 0.25, d3: 0.15, d4: 0.15, d5: 0.10, d6: 0.10 },
+            B: { d1: 0.30, d2: 0.20, d3: 0.15, d4: 0.15, d5: 0.10, d6: 0.10 },
+            C: { d1: 0.20, d2: 0.30, d3: 0.15, d4: 0.15, d5: 0.10, d6: 0.10 }
+        },
+        quadrantModifiers: {
+            quick_win: 0.95,
+            push_harder: 0.90,
+            transformational: 1.00,
+            moonshot: 0.85
+        }
+    },
+
     fields: [
-        // SECTION 1: HEADER & IDENTIFICATION
+        // =====================================================================
+        // SECTION 1: METADATA (CRITERIA 1-5)
+        // =====================================================================
         {
             id: '1',
             key: 'initiative_id',
             label: '1. Initiative ID',
-            description: 'Unique identifier for the initiative following Petrolube naming convention (e.g., PET-2025-001, NEW-005)',
+            description: 'Unique identifier: PET (core), NEW (new), REB (rebranding), ECO (ecosystem), HCM (HR)',
             type: 'text',
             required: true,
             is_scoring: false,
             weight: 0,
-            threshold: null,
-            config: { maxLength: 20, placeholder: 'PET-2025-001' },
-            category: 'header'
+            category: 'metadata',
+            config: {
+                maxLength: 10,
+                placeholder: 'PET-006',
+                pattern: '^[A-Z]{3}-[A-Z0-9]{1,6}$'
+            }
         },
         {
             id: '2',
             key: 'initiative_name',
             label: '2. Initiative Name',
-            description: 'Official name of the initiative for tracking and reporting',
+            description: 'Descriptive title (max 200 chars)',
             type: 'text',
             required: true,
             is_scoring: false,
             weight: 0,
-            threshold: null,
-            config: { maxLength: 100, placeholder: 'e.g., Oracle Redwood UX Migration' },
-            category: 'header'
+            category: 'metadata',
+            config: {
+                maxLength: 200,
+                placeholder: 'AI Demand Forecasting System'
+            }
         },
         {
             id: '3',
-            key: 'strategic_domain',
-            label: '3. Strategic Domain',
-            description: 'Primary strategic area that the initiative addresses aligned with Petrolube Vision 2030',
+            key: 'owner_name',
+            label: '3. Owner',
+            description: 'Initiative owner responsible for delivery',
             type: 'dropdown',
             required: true,
             is_scoring: false,
             weight: 0,
-            threshold: null,
-            category: 'header',
+            category: 'metadata',
             config: {
                 options: [
-                    { value: 'digital_transformation', label: 'Digital Transformation', points: 0 },
-                    { value: 'international_expansion', label: 'International Expansion', points: 0 },
-                    { value: 'sustainability_esg', label: 'Sustainability/ESG', points: 0 },
-                    { value: 'core_business_excellence', label: 'Core Business Excellence', points: 0 },
-                    { value: 'ev_bio_lubricants', label: 'EV/Bio-lubricants', points: 0 },
-                    { value: 'innovation_new_products', label: 'Innovation & New Products', points: 0 }
+                    { value: 'ceo', label: 'CEO: Salman Saadat' },
+                    { value: 'cfo', label: 'CFO: John Sliedregt' },
+                    { value: 'cito', label: 'CITO: Ghadah Al-Dabbagh' },
+                    { value: 'cmo', label: 'Marketing Director: Mian M. Usman' },
+                    { value: 'chro', label: 'CHRO' },
+                    { value: 'pmo', label: 'PMO Director' }
                 ]
             }
         },
         {
             id: '4',
-            key: 'portfolio_category',
-            label: '4. Portfolio Category',
-            description: 'Classification based on 60-15-15-10 portfolio allocation framework',
+            key: 'strategic_domain',
+            label: '4. Strategic Domain',
+            description: 'Primary strategic area aligned with Vision 2030',
             type: 'dropdown',
             required: true,
             is_scoring: false,
             weight: 0,
-            threshold: null,
-            category: 'header',
+            category: 'metadata',
             config: {
                 options: [
-                    { value: 'core_incremental', label: 'Core Incremental (60%)', points: 0 },
-                    { value: 'core_disruptive', label: 'Core Disruptive (15%)', points: 0 },
-                    { value: 'non_core_incremental', label: 'Non-Core Incremental (15%)', points: 0 },
-                    { value: 'non_core_disruptive', label: 'Non-Core Disruptive (10%)', points: 0 }
+                    { value: 'core_operations', label: 'Core Operations' },
+                    { value: 'business_model', label: 'Business Model Innovation' },
+                    { value: 'customer_experience', label: 'Customer Experience' },
+                    { value: 'technology_data', label: 'Technology & Data' },
+                    { value: 'ecosystem', label: 'Ecosystem & Partnerships' },
+                    { value: 'organizational', label: 'Organizational Transformation' }
                 ]
             }
         },
         {
             id: '5',
-            key: 'three_engines_alignment',
-            label: '5. Three Engines Alignment',
-            description: 'Primary strategic engine contribution per BCG Three Horizons methodology',
+            key: 'portfolio_category',
+            label: '5. Portfolio Category',
+            description: '60-15-15-10 allocation framework',
             type: 'dropdown',
             required: true,
             is_scoring: false,
             weight: 0,
-            threshold: null,
-            category: 'header',
+            category: 'metadata',
             config: {
                 options: [
-                    { value: 'e1_sustain_grow', label: 'E1: Sustain & Grow Core (60%)', points: 0 },
-                    { value: 'e2_expand_inorganically', label: 'E2: Expand Inorganically (25%)', points: 0 },
-                    { value: 'e3_base_oil_integration', label: 'E3: Base Oil Vertical Integration (15%)', points: 0 }
+                    { value: 'core_incremental', label: 'Core Incremental (60%)' },
+                    { value: 'core_disruptive', label: 'Core Disruptive (15%)' },
+                    { value: 'non_core_incremental', label: 'Non-Core Incremental (15%)' },
+                    { value: 'non_core_disruptive', label: 'Non-Core Disruptive (10%)' }
                 ]
             }
         },
-        
-        // SECTION 2: STRATEGIC POSITIONING
+
+        // =====================================================================
+        // SECTION 2: STRATEGIC POSITIONING (CRITERIA 6-10)
+        // =====================================================================
         {
             id: '6',
             key: 'quadrant',
-            label: '6. Quadrant',
-            description: 'Position on Impact vs Feasibility Matrix determining execution approach',
+            label: '6. Quadrant (Auto-calculated from D1/D2)',
+            description: 'Impact vs Feasibility Matrix position',
             type: 'dropdown',
-            required: true,
+            required: false,
             is_scoring: false,
             weight: 0,
-            threshold: null,
             category: 'strategic',
+            auto_calculated: true,
             config: {
                 options: [
-                    { value: 'quick_win', label: 'Quick-Win (0-12m)', points: 0 },
-                    { value: 'push_harder', label: 'Push-Harder (6-18m)', points: 0 },
-                    { value: 'transformational', label: 'Transformational (18-36m)', points: 0 },
-                    { value: 'moonshot', label: 'Moonshot (36m+)', points: 0 }
+                    { value: 'quick_win', label: 'Quick-Win (D1≥75, D2≥80)' },
+                    { value: 'push_harder', label: 'Push-Harder (D1<75, D2≥80)' },
+                    { value: 'transformational', label: 'Transformational (D1≥75, D2<80)' },
+                    { value: 'moonshot', label: 'Moonshot (D1<75, D2<80)' }
                 ]
             }
         },
         {
             id: '7',
-            key: 'strategic_priority',
-            label: '7. Strategic Priority',
-            description: 'Priority classification for resource allocation and executive attention', 
-            type: 'dropdown', 
-            required: true, 
-            is_scoring: true, 
-            weight: 15, 
-            threshold: null,
+            key: 'priority',
+            label: '7. Priority',
+            description: 'Executive priority classification',
+            type: 'dropdown',
+            required: true,
+            is_scoring: false,
+            weight: 0,
             category: 'strategic',
-            config: { 
+            config: {
                 options: [
-                    { value: 'p1_critical', label: 'P1 Critical', points: 100 },
-                    { value: 'p2_high', label: 'P2 High', points: 75 },
-                    { value: 'p3_medium', label: 'P3 Medium', points: 50 },
-                    { value: 'p4_low', label: 'P4 Low', points: 25 }
+                    { value: 'critical', label: 'Critical (CEO mandate)' },
+                    { value: 'high', label: 'High' },
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'low', label: 'Low' }
                 ]
             }
         },
         {
             id: '8',
-            key: 'year1_tier',
-            label: '8. Year 1 Tier Assignment',
-            description: 'Tier classification based on dependency criticality and value delivery timeline',
+            key: 'tier',
+            label: '8. Year 1 Tier',
+            description: 'Tier assignment (system suggests based on scores)',
             type: 'dropdown',
             required: true,
-            is_scoring: true,
-            weight: 10,
-            threshold: null,
+            is_scoring: false,
+            weight: 0,
             category: 'strategic',
             config: {
                 options: [
-                    { value: 'tier_1a', label: 'Tier 1A: Catastrophic Dependency', points: 100 },
-                    { value: 'tier_1b', label: 'Tier 1B: Oracle AI Quick Win', points: 90 },
-                    { value: 'tier_1c', label: 'Tier 1C: Digital Quick Win', points: 85 },
-                    { value: 'tier_1d', label: 'Tier 1D: Sustainability Quick Win', points: 80 },
-                    { value: 'tier_2', label: 'Tier 2: Foundational Capability', points: 60 },
-                    { value: 'deferred', label: 'Deferred: Year 2-5', points: 0 }
+                    { value: '1a', label: 'Tier 1A: Catastrophic Dependency' },
+                    { value: '1b', label: 'Tier 1B: Quick-Win' },
+                    { value: '1c', label: 'Tier 1C: Foundation' },
+                    { value: '1d', label: 'Tier 1D: Strategic' },
+                    { value: '2', label: 'Tier 2: Positioning' },
+                    { value: 'contingent', label: 'Contingent' }
                 ]
             }
         },
         {
             id: '9',
             key: 'aramco_response',
-            label: '9. Aramco Competitive Response Type',
-            description: 'Competitive positioning relative to Aramco-Valvoline market entry',
-            type: 'dropdown',
+            label: '9. Aramco Competitive Response',
+            description: 'How does this respond to Aramco-Valvoline threat? (feeds D4 scoring)',
+            type: 'textarea',
             required: true,
             is_scoring: false,
             weight: 0,
-            threshold: null,
             category: 'strategic',
             config: {
-                options: [
-                    { value: 'offensive', label: 'Offensive: Preemptive market capture', points: 0 },
-                    { value: 'defensive', label: 'Defensive: Market share protection', points: 0 },
-                    { value: 'neutral', label: 'Neutral: Independent value creation', points: 0 }
-                ]
+                maxLength: 500,
+                placeholder: 'Describe defensive and offensive competitive value...'
             }
         },
         {
             id: '10',
-            key: 'bcg_i2i_target',
-            label: '10. BCG i2i Target Contribution (+points)',
-            description: 'Expected contribution to BCG i2i innovation score improvement (baseline 59 → target 65-68)',
-            type: 'number',
+            key: 'bcg_i2i_dimensions',
+            label: '10. BCG i2i Impact',
+            description: 'Select dimensions and expected gain (+points)',
+            type: 'multiselect',
             required: true,
             is_scoring: false,
             weight: 0,
-            threshold: null,
-            config: { min: 0, max: 50, step: 1, unit: 'points', placeholder: 'Expected i2i contribution' },
-            category: 'strategic'
+            category: 'strategic',
+            config: {
+                options: [
+                    { value: 'd1', label: 'D1: Innovation Strategy' },
+                    { value: 'd2', label: 'D2: Organization & Decision Making' },
+                    { value: 'd3', label: 'D3: Governance & Metrics' },
+                    { value: 'd4', label: 'D4: Customer & Market Intelligence' },
+                    { value: 'd5', label: 'D5: Portfolio & Performance Mgmt' },
+                    { value: 'd6', label: 'D6: Talent & Culture' },
+                    { value: 'd7', label: 'D7: Analytics & Insights' },
+                    { value: 'd8', label: 'D8: Digital Technology' },
+                    { value: 'd9', label: 'D9: Ecosystems & Partnerships' },
+                    { value: 'd10', label: 'D10: Results Measurement' }
+                ],
+                gains: [1, 2, 3, 4, 5, 6]
+            }
         },
 
-        // SECTION 3: FRAMEWORK V4.0 SCORING
+        // =====================================================================
+        // SECTION 3: DIMENSION SCORES (CRITERIA 11-16) - AUTO-CALCULATED
+        // =====================================================================
         {
             id: '11',
-            key: 'strategic_impact_score',
-            label: '11. Strategic Impact Score (D1)',
-            description: 'Dimension 1 score measuring strategic value including revenue potential, competitive advantage, and Vision 2030 alignment',
+            key: 'd1_score',
+            label: '11. D1: Strategic Impact (Auto-calc)',
+            description: 'Calculated from NPV (60%) + Qualitative assessment (40%)',
             type: 'number',
-            required: true,
+            required: false,
             is_scoring: true,
             weight: 25,
-            threshold: null,
-            config: { min: 0, max: 25, step: 1, unit: 'points' },
-            category: 'scoring'
+            category: 'scoring',
+            auto_calculated: true,
+            config: { min: 0, max: 100, step: 1, unit: 'points', readonly: true }
         },
         {
             id: '12',
-            key: 'financial_impact_score',
-            label: '12. Financial Impact Score (D1 sub)',
-            description: 'Financial component of D1 measuring NPV, IRR, and ROI projections',
+            key: 'd2_score',
+            label: '12. D2: Execution Feasibility (Auto-calc)',
+            description: 'Calculated from TRL (30%) + Resources (25%) + Timeline (25%) + Dependencies (20%)',
             type: 'number',
-            required: true,
+            required: false,
             is_scoring: true,
             weight: 25,
-            threshold: null,
-            config: { min: 0, max: 25, step: 1, unit: 'points' },
-            category: 'scoring'
+            category: 'scoring',
+            auto_calculated: true,
+            config: { min: 0, max: 100, step: 1, unit: 'points', readonly: true }
         },
         {
             id: '13',
-            key: 'execution_feasibility_score',
-            label: '13. Execution Feasibility Score (D2)',
-            description: 'Dimension 2 score measuring implementation feasibility including technology readiness, resource availability, and timeline achievability',
+            key: 'd3_score',
+            label: '13. D3: BCG i2i Advancement (Auto-calc)',
+            description: 'Calculated from selected dimensions × expected gains',
             type: 'number',
-            required: true,
+            required: false,
             is_scoring: true,
             weight: 20,
-            threshold: null,
-            config: { min: 0, max: 20, step: 1, unit: 'points' },
-            category: 'scoring'
+            category: 'scoring',
+            auto_calculated: true,
+            config: { min: 0, max: 100, step: 1, unit: 'points', readonly: true }
         },
         {
             id: '14',
-            key: 'risk_management_score',
-            label: '14. Risk Management Score',
-            description: 'Assessment of risk identification, mitigation planning, and governance readiness',
+            key: 'd4_score',
+            label: '14. D4: Aramco Response (AI-suggested)',
+            description: 'AI analyzes competitive response text, human validates',
             type: 'number',
-            required: true,
-            is_scoring: false,
-            weight: 0,
-            threshold: null,
-            config: { min: 0, max: 15, step: 1, unit: 'points' },
-            category: 'scoring'
+            required: false,
+            is_scoring: true,
+            weight: 15,
+            category: 'scoring',
+            ai_suggested: true,
+            config: { min: 0, max: 100, step: 1, unit: 'points' }
         },
         {
             id: '15',
-            key: 'innovation_index_score',
-            label: '15. Innovation Index Score',
-            description: 'Measure of innovation maturity contribution aligned with BCG i2i dimensions',
+            key: 'd5_score',
+            label: '15. D5: MiRA Integration (Auto-calc)',
+            description: 'Calculated from MiRA layer + integration depth',
             type: 'number',
-            required: true,
-            is_scoring: false,
-            weight: 0,
-            threshold: null,
-            config: { min: 0, max: 15, step: 1, unit: 'points' },
-            category: 'scoring'
+            required: false,
+            is_scoring: true,
+            weight: 10,
+            category: 'scoring',
+            auto_calculated: true,
+            config: { min: 0, max: 100, step: 1, unit: 'points', readonly: true }
         },
-        
-        // SECTION 4: BUSINESS CASE
+        {
+            id: '16',
+            key: 'd6_score',
+            label: '16. D6: Three Engines Alignment (Auto-calc)',
+            description: 'Calculated from engine contribution + portfolio balance + coherence',
+            type: 'number',
+            required: false,
+            is_scoring: true,
+            weight: 10,
+            category: 'scoring',
+            auto_calculated: true,
+            config: { min: 0, max: 100, step: 1, unit: 'points', readonly: true }
+        },
+
+        // =====================================================================
+        // SECTION 4: BUSINESS CASE (CRITERIA 17-23)
+        // =====================================================================
         {
             id: '17',
-            key: 'investment_required',
-            label: '17. Total Investment Required',
-            description: 'Total capital and operational investment required over project lifecycle',
-            type: 'currency',
+            key: 'problem_statement',
+            label: '17. Problem Statement',
+            description: 'Clear description of current state pain (feeds D1)',
+            type: 'textarea',
             required: true,
             is_scoring: false,
             weight: 0,
-            threshold: null,
-            config: { min: 0, max: 100000000, placeholder: 'Total investment in SAR' },
-            category: 'financial'
-        },
-        {
-            id: '17b',
-            key: 'year1_investment',
-            label: '17b. Year 1 Investment',
-            description: 'Investment required in Year 1 (2026) for budget planning',
-            type: 'currency',
-            required: true,
-            is_scoring: false,
-            weight: 0,
-            threshold: null,
-            config: { min: 0, max: 50000000, placeholder: 'Year 1 investment in SAR' },
-            category: 'financial'
+            category: 'business_case',
+            config: {
+                maxLength: 1000,
+                placeholder: 'Describe the problem, quantify the pain...'
+            }
         },
         {
             id: '18',
-            key: 'timeline_months',
-            label: '18. Total Timeline',
-            description: 'Total implementation timeline from Gate 0 to full deployment',
-            type: 'number',
+            key: 'solution_description',
+            label: '18. Solution Description',
+            description: 'How the solution works (feeds D2)',
+            type: 'textarea',
             required: true,
             is_scoring: false,
             weight: 0,
-            threshold: null,
-            config: { min: 1, max: 60, step: 1, unit: 'months', placeholder: 'Timeline in months' },
-            category: 'financial'
+            category: 'business_case',
+            config: {
+                maxLength: 1500,
+                placeholder: 'Explain the solution approach and methodology...'
+            }
         },
         {
             id: '19',
-            key: 'resource_fte',
-            label: '19. Total FTE Required',
-            description: 'Full-time equivalent resources required for implementation',
-            type: 'number',
+            key: 'financial_projections',
+            label: '19. Financial Projections',
+            description: 'Year-by-year cash flows (feeds D1 quantitative)',
+            type: 'financial_table',
             required: true,
             is_scoring: false,
             weight: 0,
-            threshold: null,
-            config: { min: 0, max: 100, step: 1, unit: 'FTE', placeholder: 'Number of FTEs' },
-            category: 'financial'
+            category: 'business_case',
+            config: {
+                years: [0, 1, 2, 3, 4, 5],
+                calculate_npv: true,
+                wacc: 0.12
+            }
         },
         {
             id: '20',
-            key: 'expected_roi_year3',
-            label: '20. Expected ROI Year 3',
-            description: 'Expected cumulative return on investment by end of Year 3',
-            type: 'currency',
+            key: 'roi_analysis',
+            label: '20. ROI Analysis',
+            description: 'Benefit breakdown by category',
+            type: 'benefit_table',
             required: true,
             is_scoring: false,
             weight: 0,
-            threshold: null,
-            config: { min: 0, max: 100000000, placeholder: 'Expected Year 3 ROI in SAR' },
-            category: 'financial'
+            category: 'business_case',
+            config: {
+                maxCategories: 5
+            }
         },
         {
             id: '21',
-            key: 'irr_percentage',
-            label: '21. IRR - Internal Rate of Return',
-            description: 'Internal Rate of Return calculated using standard DCF methodology (threshold: 15% minimum)',
-            type: 'number',
+            key: 'stakeholder_impact',
+            label: '21. Stakeholder Impact',
+            description: 'Impact by stakeholder group (feeds D1 qualitative)',
+            type: 'text',
             required: true,
-            is_scoring: true,
-            weight: 5,
-            threshold: 15,
-            config: { min: 0, max: 100, step: 1, unit: '%', placeholder: 'IRR percentage' },
-            category: 'financial'
+            is_scoring: false,
+            weight: 0,
+            category: 'business_case',
+            config: {
+                maxLength: 600,
+                placeholder: 'CEO impact, CFO impact, Customer impact, Employee impact...'
+            }
         },
         {
             id: '22',
-            key: 'payback_period',
-            label: '22. Payback Period',
-            description: 'Time to recover initial investment from cumulative cash flows',
-            type: 'number',
+            key: 'competitive_analysis',
+            label: '22. Competitive Analysis',
+            description: 'Competitive positioning (feeds D4)',
+            type: 'textarea',
             required: true,
             is_scoring: false,
             weight: 0,
-            threshold: null,
-            config: { min: 0, max: 10, step: 0.1, unit: 'years', placeholder: 'Payback period in years' },
-            category: 'financial'
+            category: 'business_case',
+            config: {
+                maxLength: 800,
+                placeholder: 'What competitors lack, our advantage, time to replicate...'
+            }
         },
         {
             id: '23',
-            key: 'npv_5year',
-            label: '23. NPV @ 12% WACC - 5 Year',
-            description: 'Net Present Value over 5-year horizon using 12% weighted average cost of capital',
-            type: 'currency',
+            key: 'strategic_rationale',
+            label: '23. Strategic Rationale',
+            description: 'Why now, why important (feeds D6)',
+            type: 'textarea',
             required: true,
             is_scoring: false,
             weight: 0,
-            threshold: null,
-            config: { min: -50000000, max: 100000000, placeholder: '5-year NPV in SAR' },
-            category: 'financial'
-        },
-        
-        // SECTION 5: IMPLEMENTATION
-        { id: '24', key: 'phase1_duration', label: '24. Phase 1 Duration (Months)', type: 'number', required: true, is_scoring: false, weight: 0, threshold: null, config: { min: 1, max: 24 }, category: 'implementation' },
-        { id: '25', key: 'phase2_duration', label: '25. Phase 2 Duration (Months)', type: 'number', required: false, is_scoring: false, weight: 0, threshold: null, config: { min: 0, max: 24 }, category: 'implementation' },
-        { id: '26', key: 'phase3_duration', label: '26. Phase 3 Duration (Months)', type: 'number', required: false, is_scoring: false, weight: 0, threshold: null, config: { min: 0, max: 24 }, category: 'implementation' },
-        { id: '27', key: 'gate0_approved', label: '27. Gate 0 - Concept Approval', type: 'yesno', required: true, is_scoring: false, weight: 0, threshold: null, config: {}, category: 'implementation' },
-        
-        // SECTION 6: DEPENDENCIES
-        { id: '28', key: 'critical_prerequisites_count', label: '28. Number of Critical Prerequisites', type: 'number', required: true, is_scoring: false, weight: 0, threshold: null, config: { min: 0, max: 20 }, category: 'dependencies' },
-        { id: '29', key: 'technical_dependencies_count', label: '29. Number of Technical Dependencies', type: 'number', required: true, is_scoring: false, weight: 0, threshold: null, config: { min: 0, max: 20 }, category: 'dependencies' },
-        { id: '30', key: 'organizational_dependencies_count', label: '30. Number of Organizational Dependencies', type: 'number', required: true, is_scoring: false, weight: 0, threshold: null, config: { min: 0, max: 20 }, category: 'dependencies' },
-        
-        // SECTION 7: RISK ASSESSMENT
-        { 
-            id: '31a', 
-            key: 'risk1_severity', 
-            label: '31a. Risk #1 Severity', 
-            type: 'dropdown', 
-            required: true, 
-            is_scoring: false, 
-            weight: 0, 
-            threshold: null,
-            category: 'risk',
-            config: { 
-                options: [
-                    { value: 'critical', label: 'Critical', points: 0 },
-                    { value: 'high', label: 'High', points: 0 },
-                    { value: 'medium', label: 'Medium', points: 0 },
-                    { value: 'low', label: 'Low', points: 0 }
-                ]
-            },
-            killSwitch: {
-                operator: '==',
-                threshold: 'critical',
-                message: 'Critical risk requires Risk Committee approval'
+            category: 'business_case',
+            config: {
+                maxLength: 600,
+                placeholder: 'Why strategically important, why now, what if we don\'t...'
             }
         },
-        { id: '32', key: 'upside_potential_sar', label: '32. Upside Opportunity Potential (SAR)', type: 'currency', required: false, is_scoring: false, weight: 0, threshold: null, config: { min: 0, max: 50000000 }, category: 'risk' },
-        { id: '33', key: 'contingency_budget', label: '33. Contingency Budget (SAR)', type: 'currency', required: true, is_scoring: false, weight: 0, threshold: null, config: { min: 0, max: 20000000 }, category: 'risk' },
-        
-        // SECTION 8: SUCCESS METRICS
-        { id: '34', key: 'roi_target_year1', label: '34. ROI Achievement Target Year 1 (%)', type: 'number', required: true, is_scoring: false, weight: 0, threshold: null, config: { min: 0, max: 200 }, category: 'metrics' },
-        { 
-            id: '35', 
-            key: 'board_recommendation', 
-            label: '35. Recommendation', 
-            type: 'dropdown', 
-            required: true, 
-            is_scoring: false, 
-            weight: 0, 
-            threshold: null,
-            category: 'metrics',
-            config: { 
+
+        // =====================================================================
+        // SECTION 5: IMPLEMENTATION (CRITERIA 24-27)
+        // =====================================================================
+        {
+            id: '24',
+            key: 'trl_level',
+            label: '24. Technology Readiness Level (TRL)',
+            description: 'TRL 1-9 (feeds D2 - 30% weight)',
+            type: 'dropdown',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            category: 'implementation',
+            config: {
                 options: [
-                    { value: 'accelerate', label: 'ACCELERATE', points: 0 },
-                    { value: 'keep', label: 'KEEP', points: 0 },
-                    { value: 'keep_conditions', label: 'KEEP WITH CONDITIONS', points: 0 },
-                    { value: 'defer', label: 'DEFER', points: 0 },
-                    { value: 'remove', label: 'REMOVE', points: 0 }
+                    { value: 9, label: 'TRL 9: Proven in operational environment', score: 95 },
+                    { value: 8, label: 'TRL 8: System complete and qualified', score: 90 },
+                    { value: 7, label: 'TRL 7: System prototype in operation', score: 85 },
+                    { value: 6, label: 'TRL 6: System model in relevant environment', score: 80 },
+                    { value: 5, label: 'TRL 5: Component validation', score: 75 },
+                    { value: 4, label: 'TRL 4: Component validation in lab', score: 65 },
+                    { value: 3, label: 'TRL 3: Proof of concept', score: 60 },
+                    { value: 2, label: 'TRL 2: Technology concept formulated', score: 55 },
+                    { value: 1, label: 'TRL 1: Basic principles observed', score: 50 }
                 ]
+            }
+        },
+        {
+            id: '25',
+            key: 'resource_availability',
+            label: '25. Resource Availability',
+            description: 'Team, budget, sponsor, skills (feeds D2 - 25% weight)',
+            type: 'checklist',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            category: 'implementation',
+            config: {
+                options: [
+                    { value: 'team', label: 'Team assigned' },
+                    { value: 'budget', label: 'Budget confirmed' },
+                    { value: 'sponsor', label: 'Executive sponsor identified' },
+                    { value: 'skills', label: 'Required skills available' }
+                ]
+            }
+        },
+        {
+            id: '26',
+            key: 'timeline',
+            label: '26. Timeline',
+            description: 'Start date, end date, confidence (feeds D2 - 25% weight)',
+            type: 'timeline',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            category: 'implementation',
+            config: {
+                fields: ['start_date', 'end_date', 'confidence']
+            }
+        },
+        {
+            id: '27',
+            key: 'mira_integration',
+            label: '27. MiRA Integration',
+            description: 'MiRA layer and integration depth (feeds D5)',
+            type: 'mira_config',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            category: 'implementation',
+            config: {
+                layers: [
+                    { value: 0, label: 'No MiRA use', score: 0 },
+                    { value: 1, label: 'Layer 1: Basic reporting', score: 30 },
+                    { value: 2, label: 'Layer 2: Data lake/analytics', score: 50 },
+                    { value: 3, label: 'Layer 3: ML/AI models', score: 70 },
+                    { value: 4, label: 'Layer 4: API/ecosystem monetization', score: 90 }
+                ],
+                depth: ['low', 'medium', 'high']
+            }
+        },
+
+        // =====================================================================
+        // SECTION 6: DEPENDENCIES (CRITERIA 28-30)
+        // =====================================================================
+        {
+            id: '28',
+            key: 'prerequisites',
+            label: '28. Prerequisites',
+            description: 'Critical dependencies that must complete first (feeds D2 - 20% weight)',
+            type: 'dependency_list',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            category: 'dependencies',
+            config: {
+                fields: ['type', 'name', 'criticality', 'due_date', 'status']
+            }
+        },
+        {
+            id: '29',
+            key: 'enablers',
+            label: '29. Enablers',
+            description: 'Capabilities that enable this initiative',
+            type: 'enabler_list',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            category: 'dependencies',
+            config: {
+                types: ['Technology', 'Data', 'Process', 'Capability']
+            }
+        },
+        {
+            id: '30',
+            key: 'integration_points',
+            label: '30. Integration Points',
+            description: 'Systems/platforms requiring integration',
+            type: 'integration_list',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            category: 'dependencies',
+            config: {
+                systems: ['Oracle', 'MiRA', 'SAP', 'Custom']
+            }
+        },
+
+        // =====================================================================
+        // SECTION 7: RAID (CRITERIA 31-34)
+        // =====================================================================
+        {
+            id: '31',
+            key: 'risks',
+            label: '31. Risks',
+            description: 'Risk register with 5×5 matrix (impacts D2)',
+            type: 'risk_matrix',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            category: 'raid',
+            config: {
+                minRisks: 3,
+                probability: ['Very Low', 'Low', 'Medium', 'High', 'Very High'],
+                impact: ['Negligible', 'Low', 'Medium', 'High', 'Catastrophic']
+            }
+        },
+        {
+            id: '32',
+            key: 'assumptions',
+            label: '32. Assumptions',
+            description: 'Key assumptions requiring validation (impacts D2)',
+            type: 'assumption_list',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            category: 'raid',
+            config: {
+                minAssumptions: 3,
+                categories: ['Market', 'Technology', 'Resource', 'Financial', 'Regulatory']
+            }
+        },
+        {
+            id: '33',
+            key: 'issues',
+            label: '33. Issues',
+            description: 'Current blockers requiring resolution',
+            type: 'issue_list',
+            required: false,
+            is_scoring: false,
+            weight: 0,
+            category: 'raid',
+            config: {
+                severity: ['Critical', 'High', 'Medium', 'Low']
+            }
+        },
+        {
+            id: '34',
+            key: 'dependency_count',
+            label: '34. Total Critical Dependencies',
+            description: 'Count of critical dependencies (auto-calc from #28)',
+            type: 'number',
+            required: false,
+            is_scoring: false,
+            weight: 0,
+            category: 'raid',
+            auto_calculated: true,
+            config: { readonly: true }
+        },
+
+        // =====================================================================
+        // SECTION 8: METRICS (CRITERIA 35-37)
+        // =====================================================================
+        {
+            id: '35',
+            key: 'success_criteria',
+            label: '35. Success Criteria',
+            description: 'SMART measurable success definitions (min 3)',
+            type: 'criteria_list',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            category: 'metrics',
+            config: {
+                minCriteria: 3,
+                fields: ['metric', 'baseline', 'target', 'timeframe', 'method']
+            }
+        },
+        {
+            id: '36',
+            key: 'kpis',
+            label: '36. KPIs',
+            description: 'Key Performance Indicators with thresholds (min 3)',
+            type: 'kpi_list',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            category: 'metrics',
+            config: {
+                minKPIs: 3,
+                categories: ['Financial', 'Operational', 'Customer', 'Employee', 'Strategic'],
+                frequency: ['Daily', 'Weekly', 'Monthly', 'Quarterly']
+            }
+        },
+        {
+            id: '37',
+            key: 'governance',
+            label: '37. Governance',
+            description: 'Reporting structure and review cadence',
+            type: 'governance_config',
+            required: true,
+            is_scoring: false,
+            weight: 0,
+            category: 'metrics',
+            config: {
+                sponsors: ['CEO', 'CFO', 'CITO', 'Other'],
+                reporting: ['Daily', 'Weekly', 'Bi-weekly', 'Monthly', 'Quarterly'],
+                gates: ['Gate 0', 'Gate 1', 'Gate 2', 'Gate 3', 'Gate 4', 'Gate 5']
             }
         }
     ]
@@ -1602,6 +1836,381 @@ const PETROLUBE_35_TEMPLATE = {
 // ============================================================================
 // SAMPLE DATA - 7 REALISTIC PROJECTS
 // ============================================================================
+
+// ============================================================================
+// 6-DIMENSION SCORING CALCULATION FUNCTIONS
+// ============================================================================
+
+/**
+ * Calculate D1: Strategic Impact Score (0-100)
+ * Components: NPV-based Quantitative (60%) + Qualitative Assessment (40%)
+ */
+function calculateD1Score(criteriaValues, allInitiatives) {
+    // Quantitative Component (60% weight) - from Financial Projections
+    const npv = calculateNPV(criteriaValues.financial_projections);
+    let quantScore = 0;
+
+    if (npv > 100000000) quantScore = 95;
+    else if (npv > 50000000) quantScore = 85;
+    else if (npv > 20000000) quantScore = 75;
+    else if (npv > 5000000) quantScore = 65;
+    else quantScore = 55;
+
+    // Qualitative Component (40% weight) - from Problem, Stakeholder, Strategic Rationale
+    let qualScore = 0;
+
+    // Analyze problem severity
+    const problemText = (criteriaValues.problem_statement || '').toLowerCase();
+    if (problemText.includes('sar') || problemText.includes('million')) qualScore += 3;
+    if (problemText.includes('critical') || problemText.includes('urgent')) qualScore += 2;
+
+    // Analyze stakeholder impact
+    const stakeholderText = (criteriaValues.stakeholder_impact || '').toLowerCase();
+    if (stakeholderText.includes('ceo') || stakeholderText.includes('executive')) qualScore += 2;
+    if (stakeholderText.includes('customer')) qualScore += 2;
+
+    // Strategic alignment
+    const strategicText = (criteriaValues.strategic_rationale || '').toLowerCase();
+    if (strategicText.includes('vision') || strategicText.includes('strategy')) qualScore += 1;
+
+    // Combine: 60% quantitative + 40% qualitative
+    const d1 = Math.round((quantScore * 0.6) + (qualScore * 4));
+    return Math.min(100, Math.max(0, d1));
+}
+
+/**
+ * Calculate D2: Execution Feasibility Score (0-100)
+ * Components: TRL (30%) + Resources (25%) + Timeline (25%) + Dependencies (20%)
+ */
+function calculateD2Score(criteriaValues) {
+    // TRL Component (30% weight)
+    const trlOptions = {
+        9: 95, 8: 90, 7: 85, 6: 80, 5: 75,
+        4: 65, 3: 60, 2: 55, 1: 50
+    };
+    const trlScore = (trlOptions[criteriaValues.trl_level] || 70) * 0.30;
+
+    // Resource Availability Component (25% weight)
+    const resources = criteriaValues.resource_availability || [];
+    const resourceScore = (resources.length / 4) * 100 * 0.25;
+
+    // Timeline Confidence Component (25% weight)
+    const timeline = criteriaValues.timeline || {};
+    const duration = calculateMonthsDuration(timeline.start_date, timeline.end_date);
+    let timelineScore = 70;
+
+    if (duration <= 4 && timeline.confidence === 'high') timelineScore = 90;
+    else if (duration <= 6 && timeline.confidence !== 'low') timelineScore = 80;
+    else if (duration <= 12 && timeline.confidence !== 'low') timelineScore = 70;
+    else timelineScore = 60;
+
+    timelineScore *= 0.25;
+
+    // Dependency Complexity Component (20% weight)
+    const criticalDeps = (criteriaValues.prerequisites || []).filter(p => p.criticality === 'Critical').length;
+    const totalDeps = (criteriaValues.prerequisites || []).length;
+    let depScore = 90;
+
+    if (criticalDeps === 0 && totalDeps <= 3) depScore = 90;
+    else if (criticalDeps === 0 && totalDeps <= 5) depScore = 80;
+    else if (criticalDeps === 1) depScore = 70;
+    else if (criticalDeps === 2) depScore = 60;
+    else depScore = 50;
+
+    depScore *= 0.20;
+
+    const d2 = Math.round(trlScore + resourceScore + timelineScore + depScore);
+    return Math.min(100, Math.max(0, d2));
+}
+
+/**
+ * Calculate D3: BCG i2i Advancement Score (0-100)
+ * Based on number of dimensions × expected gain
+ */
+function calculateD3Score(criteriaValues) {
+    const dimensions = criteriaValues.bcg_i2i_dimensions || [];
+    if (dimensions.length === 0) return 0;
+
+    // Base score: number of dimensions × 10
+    const baseScore = dimensions.length * 10;
+
+    // Calculate average expected gain
+    const avgGain = dimensions.reduce((sum, dim) => sum + (dim.gain || 3), 0) / dimensions.length;
+    const gainPoints = avgGain * 5;
+
+    // Breadth bonus
+    let breadthBonus = 0;
+    if (dimensions.length >= 7) breadthBonus = 20;
+    else if (dimensions.length >= 5) breadthBonus = 10;
+
+    const d3 = Math.round(baseScore + gainPoints + breadthBonus);
+    return Math.min(100, Math.max(0, d3));
+}
+
+/**
+ * Calculate D4: Aramco Competitive Response Score (0-100)
+ * AI-suggested from competitive analysis text, human validates
+ */
+function calculateD4Score(criteriaValues) {
+    // This would use AI analysis in production
+    // For now, use keyword-based scoring
+
+    const aramcoText = (criteriaValues.aramco_response || '').toLowerCase();
+    const compText = (criteriaValues.competitive_analysis || '').toLowerCase();
+    const combinedText = aramcoText + ' ' + compText;
+
+    let defensiveScore = 50;
+    let offensiveScore = 50;
+
+    // Defensive keywords
+    if (combinedText.includes('protect') || combinedText.includes('retain')) defensiveScore += 10;
+    if (combinedText.includes('defend') || combinedText.includes('prevent')) defensiveScore += 10;
+    if (combinedText.includes('customer retention') || combinedText.includes('loyalty')) defensiveScore += 10;
+    if (combinedText.includes('switching cost')) defensiveScore += 10;
+
+    // Offensive keywords
+    if (combinedText.includes('lead') || combinedText.includes('first-mover')) offensiveScore += 10;
+    if (combinedText.includes('cannot replicate') || combinedText.includes('unique')) offensiveScore += 10;
+    if (combinedText.includes('capability gap') || combinedText.includes('advantage')) offensiveScore += 10;
+    if (combinedText.includes('mira') || combinedText.includes('data')) offensiveScore += 10;
+
+    // Time to replicate modifier
+    if (combinedText.includes('36 month') || combinedText.includes('3 year')) offensiveScore += 10;
+    else if (combinedText.includes('24 month') || combinedText.includes('2 year')) offensiveScore += 5;
+
+    const d4 = Math.round((Math.min(100, defensiveScore) + Math.min(100, offensiveScore)) / 2);
+    return Math.min(100, Math.max(0, d4));
+}
+
+/**
+ * Calculate D5: MiRA Integration Potential Score (0-100)
+ * Based on MiRA layer + integration depth
+ */
+function calculateD5Score(criteriaValues) {
+    const miraConfig = criteriaValues.mira_integration || {};
+
+    if (!miraConfig.layer || miraConfig.layer === 0) return 0;
+
+    // Base score from layer
+    const layerScores = { 0: 0, 1: 30, 2: 50, 3: 70, 4: 90 };
+    let baseScore = layerScores[miraConfig.layer] || 0;
+
+    // Depth modifier
+    const depthModifiers = { 'low': -10, 'medium': 0, 'high': 10 };
+    const depthMod = depthModifiers[miraConfig.depth] || 0;
+
+    // Multi-layer bonus
+    const multiLayerBonus = miraConfig.multiple_layers ? 5 : 0;
+
+    // Monetization clarity (for Layer 4)
+    let monetizationMod = 0;
+    if (miraConfig.layer === 4) {
+        if (miraConfig.monetization_clarity === 'yes') monetizationMod = 0;
+        else if (miraConfig.monetization_clarity === 'partial') monetizationMod = -10;
+        else monetizationMod = -20;
+    }
+
+    const d5 = Math.round(baseScore + depthMod + multiLayerBonus + monetizationMod);
+    return Math.min(100, Math.max(0, d5));
+}
+
+/**
+ * Calculate D6: Three Engines Alignment Score (0-100)
+ * Components: Engine Contribution (40%) + Portfolio Balance (35%) + Strategic Coherence (25%)
+ */
+function calculateD6Score(criteriaValues, allInitiatives) {
+    // Engine Contribution (40% weight)
+    const engineStrengthScores = {
+        'critical': 95,
+        'strong': 85,
+        'solid': 75,
+        'moderate': 65,
+        'weak': 55
+    };
+    const contributionScore = (engineStrengthScores[criteriaValues.engine_contribution_strength] || 70) * 0.40;
+
+    // Portfolio Balance (35% weight)
+    const targetDistribution = { e1_sustain_grow: 0.60, e2_expand_inorganically: 0.25, e3_base_oil_integration: 0.15 };
+    const currentEngine = criteriaValues.three_engines_alignment || 'e1_sustain_grow';
+
+    // Calculate current distribution
+    const engineCounts = { e1_sustain_grow: 0, e2_expand_inorganically: 0, e3_base_oil_integration: 0 };
+    allInitiatives.forEach(init => {
+        const engine = init.criteriaValues?.three_engines_alignment || 'e1_sustain_grow';
+        if (engineCounts[engine] !== undefined) engineCounts[engine]++;
+    });
+
+    const total = allInitiatives.length;
+    const currentPct = engineCounts[currentEngine] / total;
+    const targetPct = targetDistribution[currentEngine];
+    const gap = targetPct - currentPct;
+
+    let balanceScore = 70;
+    if (gap > 0) balanceScore = 85 + Math.min(gap * 100, 15); // Under-allocated, adding helps
+    else balanceScore = 70 - Math.min(Math.abs(gap) * 100, 20); // Over-allocated
+
+    balanceScore *= 0.35;
+
+    // Strategic Coherence (25% weight)
+    const coherence = criteriaValues.strategic_coherence || {};
+    let coherenceChecks = 0;
+    if (coherence.ceo_priority) coherenceChecks++;
+    if (coherence.aramco_address) coherenceChecks++;
+    if (coherence.bcg_i2i) coherenceChecks++;
+    if (coherence.vision_fit) coherenceChecks++;
+
+    const coherenceScore = (coherenceChecks / 4) * 100 * 0.25;
+
+    const d6 = Math.round(contributionScore + balanceScore + coherenceScore);
+    return Math.min(100, Math.max(0, d6));
+}
+
+/**
+ * Calculate NPV from financial projections
+ */
+function calculateNPV(financialData) {
+    if (!financialData || !financialData.years) return 0;
+
+    const wacc = financialData.wacc || 0.12;
+    const years = financialData.years || {};
+
+    let npv = 0;
+    Object.keys(years).forEach(year => {
+        const yearNum = parseInt(year);
+        const cashFlow = years[year] || 0;
+        npv += cashFlow / Math.pow(1 + wacc, yearNum);
+    });
+
+    return npv;
+}
+
+/**
+ * Calculate months between two dates
+ */
+function calculateMonthsDuration(startDate, endDate) {
+    if (!startDate || !endDate) return 12;
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+    return Math.max(1, months);
+}
+
+/**
+ * Calculate composite score from 6 dimensions
+ */
+function calculateCompositeScore(scores, scenario = 'A') {
+    const weights = PETROLUBE_35_TEMPLATE.scoringConfig.scenarios[scenario];
+
+    const composite =
+        (scores.d1 || 0) * weights.d1 +
+        (scores.d2 || 0) * weights.d2 +
+        (scores.d3 || 0) * weights.d3 +
+        (scores.d4 || 0) * weights.d4 +
+        (scores.d5 || 0) * weights.d5 +
+        (scores.d6 || 0) * weights.d6;
+
+    return Math.round(composite * 10) / 10; // Round to 1 decimal
+}
+
+/**
+ * Assign quadrant based on D1 and D2 scores
+ */
+function assignQuadrant(d1, d2) {
+    if (d1 >= 75 && d2 >= 80) return 'quick_win';
+    if (d1 < 75 && d2 >= 80) return 'push_harder';
+    if (d1 >= 75 && d2 < 80) return 'transformational';
+    return 'moonshot';
+}
+
+/**
+ * Calculate final score with quadrant modifier
+ */
+function calculateFinalScore(compositeScore, quadrant) {
+    const modifier = PETROLUBE_35_TEMPLATE.scoringConfig.quadrantModifiers[quadrant] || 1.0;
+    return Math.round(compositeScore * modifier * 10) / 10;
+}
+
+/**
+ * Assign tier based on scores and characteristics
+ */
+function assignTier(criteriaValues, finalScore, allInitiatives) {
+    // Check for catastrophic dependencies
+    const criticalDeps = (criteriaValues.prerequisites || []).filter(p => p.criticality === 'Critical').length;
+    if (criticalDeps >= 3) return '1a';
+
+    // Priority-based tier assignment
+    if (criteriaValues.priority === 'critical') {
+        if (finalScore >= 80) return '1a';
+        return '1b';
+    }
+
+    // Score-based tier assignment
+    if (finalScore >= 80) return '1b';
+    if (finalScore >= 70) return '1c';
+    if (finalScore >= 60) return '1d';
+    if (finalScore >= 50) return '2';
+    return 'contingent';
+}
+
+/**
+ * Validate portfolio balance
+ */
+function validatePortfolioBalance(allInitiatives) {
+    const categoryCounts = {
+        core_incremental: 0,
+        core_disruptive: 0,
+        non_core_incremental: 0,
+        non_core_disruptive: 0
+    };
+
+    const engineCounts = {
+        e1_sustain_grow: 0,
+        e2_expand_inorganically: 0,
+        e3_base_oil_integration: 0
+    };
+
+    allInitiatives.forEach(init => {
+        const cat = init.criteriaValues?.portfolio_category;
+        const eng = init.criteriaValues?.three_engines_alignment;
+
+        if (categoryCounts[cat] !== undefined) categoryCounts[cat]++;
+        if (engineCounts[eng] !== undefined) engineCounts[eng]++;
+    });
+
+    const total = allInitiatives.length;
+
+    // Calculate percentages
+    const categoryPct = {
+        core_incremental: (categoryCounts.core_incremental / total) * 100,
+        core_disruptive: (categoryCounts.core_disruptive / total) * 100,
+        non_core_incremental: (categoryCounts.non_core_incremental / total) * 100,
+        non_core_disruptive: (categoryCounts.non_core_disruptive / total) * 100
+    };
+
+    const enginePct = {
+        e1_sustain_grow: (engineCounts.e1_sustain_grow / total) * 100,
+        e2_expand_inorganically: (engineCounts.e2_expand_inorganically / total) * 100,
+        e3_base_oil_integration: (engineCounts.e3_base_oil_integration / total) * 100
+    };
+
+    // Validate against targets
+    const validation = {
+        category: {
+            core_incremental: { actual: categoryPct.core_incremental, target: 60, inRange: categoryPct.core_incremental >= 58 && categoryPct.core_incremental <= 62 },
+            core_disruptive: { actual: categoryPct.core_disruptive, target: 15, inRange: categoryPct.core_disruptive >= 13 && categoryPct.core_disruptive <= 17 },
+            non_core_incremental: { actual: categoryPct.non_core_incremental, target: 15, inRange: categoryPct.non_core_incremental >= 13 && categoryPct.non_core_incremental <= 17 },
+            non_core_disruptive: { actual: categoryPct.non_core_disruptive, target: 10, inRange: categoryPct.non_core_disruptive >= 8 && categoryPct.non_core_disruptive <= 12 }
+        },
+        engine: {
+            e1_sustain_grow: { actual: enginePct.e1_sustain_grow, target: 60, inRange: enginePct.e1_sustain_grow >= 58 && enginePct.e1_sustain_grow <= 62 },
+            e2_expand_inorganically: { actual: enginePct.e2_expand_inorganically, target: 25, inRange: enginePct.e2_expand_inorganically >= 23 && enginePct.e2_expand_inorganically <= 27 },
+            e3_base_oil_integration: { actual: enginePct.e3_base_oil_integration, target: 15, inRange: enginePct.e3_base_oil_integration >= 13 && enginePct.e3_base_oil_integration <= 17 }
+        }
+    };
+
+    return validation;
+}
 
 const SAMPLE_PROJECTS = [
     {
@@ -4767,10 +5376,11 @@ function renderWizardStep1() {
 }
 
 function renderWizardStep2(template) {
-    const fields = template.fields.filter(f => f.category === 'header');
-    
+    const fields = template.fields.filter(f => f.category === 'metadata');
+
     return `
-        <div class="section-header">Section 1: Header & Identification</div>
+        <div class="section-header">Section 1: Metadata & Identification</div>
+        <p style="color: var(--neutral-600); margin-bottom: 24px;">Basic initiative information and strategic classification</p>
         <div class="grid grid-2">
             ${fields.map(field => renderFieldInput(field)).join('')}
         </div>
@@ -4784,33 +5394,37 @@ function renderWizardStep2(template) {
 
 function renderWizardStep3(template) {
     const fields = template.fields.filter(f => f.category === 'strategic');
-    
+
     return `
         <div class="section-header">Section 2: Strategic Positioning</div>
+        <p style="color: var(--neutral-600); margin-bottom: 24px;">Priority, tier, competitive response, and BCG i2i impact</p>
         <div class="grid grid-2">
             ${fields.map(field => renderFieldInput(field)).join('')}
         </div>
 
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="wizardPrev()">← Back</button>
-            <button class="btn btn-primary" onclick="wizardNext(3)">Next: Scoring →</button>
+            <button class="btn btn-primary" onclick="wizardNext(3)">Next: Business Case →</button>
         </div>
     `;
 }
 
 function renderWizardStep4(template) {
-    const scoringFields = template.fields.filter(f => f.category === 'scoring');
-    const financialFields = template.fields.filter(f => f.category === 'financial');
-    
+    const businessFields = template.fields.filter(f => f.category === 'business_case');
+    const implFields = template.fields.filter(f => f.category === 'implementation');
+    const depFields = template.fields.filter(f => f.category === 'dependencies');
+
     return `
-        <div class="section-header">Section 3: Framework V4.0 Scoring</div>
+        <div class="section-header">Section 4: Business Case</div>
+        <p style="color: var(--neutral-600); margin-bottom: 24px;">Problem, solution, financials, and strategic rationale</p>
         <div class="grid grid-2">
-            ${scoringFields.map(field => renderFieldInput(field)).join('')}
+            ${businessFields.slice(0, 5).map(field => renderFieldInput(field)).join('')}
         </div>
-        
-        <div class="section-header">Section 4: Business Case & Financial</div>
+
+        <div class="section-header" style="margin-top: 32px;">Section 5: Implementation</div>
+        <p style="color: var(--neutral-600); margin-bottom: 24px;">TRL, resources, timeline, and MiRA integration</p>
         <div class="grid grid-2">
-            ${financialFields.map(field => renderFieldInput(field)).join('')}
+            ${implFields.map(field => renderFieldInput(field)).join('')}
         </div>
 
         <div class="modal-footer">
@@ -4955,6 +5569,212 @@ function renderFieldInput(field) {
                 </div>
             </div>
         `;
+    } else if (field.type === 'textarea') {
+        return `
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label class="form-label ${field.required ? 'required' : ''}">${field.label}</label>
+                ${description}
+                <textarea class="form-control" id="field-${field.key}" rows="${field.config?.rows || 4}"
+                          placeholder="${placeholder}" maxlength="${field.config?.maxLength || 2000}"
+                          onchange="updateFieldValue('${field.key}', this.value)">${value}</textarea>
+            </div>
+        `;
+    } else if (field.type === 'multiselect') {
+        const selectedValues = Array.isArray(value) ? value : [];
+        return `
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label class="form-label ${field.required ? 'required' : ''}">${field.label}</label>
+                ${description}
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding-top: 8px;">
+                    ${field.config.options.map(opt => {
+                        const isChecked = selectedValues.some(v => v.dimension === opt.value);
+                        const selectedItem = selectedValues.find(v => v.dimension === opt.value);
+                        const gain = selectedItem?.gain || 3;
+                        return `
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" value="${opt.value}"
+                                       ${isChecked ? 'checked' : ''}
+                                       onchange="updateMultiselectValue('${field.key}', '${opt.value}', this.checked)">
+                                <span>${opt.label}</span>
+                                ${isChecked ? `
+                                    <select class="form-control" style="width: 80px; margin-left: auto; font-size: 12px; padding: 4px 8px;"
+                                            onchange="updateMultiselectGain('${field.key}', '${opt.value}', parseInt(this.value))">
+                                        <option value="1" ${gain === 1 ? 'selected' : ''}>+1</option>
+                                        <option value="2" ${gain === 2 ? 'selected' : ''}>+2</option>
+                                        <option value="3" ${gain === 3 ? 'selected' : ''}>+3</option>
+                                        <option value="4" ${gain === 4 ? 'selected' : ''}>+4</option>
+                                        <option value="5" ${gain === 5 ? 'selected' : ''}>+5</option>
+                                    </select>
+                                ` : ''}
+                            </label>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    } else if (field.type === 'checklist') {
+        const selectedValues = Array.isArray(value) ? value : [];
+        return `
+            <div class="form-group">
+                <label class="form-label ${field.required ? 'required' : ''}">${field.label}</label>
+                ${description}
+                <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 8px;">
+                    ${field.config.options.map(opt => `
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" value="${opt.value}"
+                                   ${selectedValues.includes(opt.value) ? 'checked' : ''}
+                                   onchange="updateChecklistValue('${field.key}', '${opt.value}', this.checked)">
+                            <span>${opt.label}</span>
+                        </label>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    } else if (field.type === 'timeline') {
+        const timelineValue = typeof value === 'object' ? value : { start_date: '', end_date: '', confidence: 'medium' };
+        return `
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label class="form-label ${field.required ? 'required' : ''}">${field.label}</label>
+                ${description}
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding-top: 8px;">
+                    <div>
+                        <label style="font-size: 12px; color: var(--neutral-600); display: block; margin-bottom: 4px;">Start Date</label>
+                        <input type="date" class="form-control" value="${timelineValue.start_date || ''}"
+                               onchange="updateTimelineValue('${field.key}', 'start_date', this.value)">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; color: var(--neutral-600); display: block; margin-bottom: 4px;">End Date</label>
+                        <input type="date" class="form-control" value="${timelineValue.end_date || ''}"
+                               onchange="updateTimelineValue('${field.key}', 'end_date', this.value)">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; color: var(--neutral-600); display: block; margin-bottom: 4px;">Confidence</label>
+                        <select class="form-control" onchange="updateTimelineValue('${field.key}', 'confidence', this.value)">
+                            <option value="high" ${timelineValue.confidence === 'high' ? 'selected' : ''}>High</option>
+                            <option value="medium" ${timelineValue.confidence === 'medium' ? 'selected' : ''}>Medium</option>
+                            <option value="low" ${timelineValue.confidence === 'low' ? 'selected' : ''}>Low</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (field.type === 'mira_config') {
+        const miraValue = typeof value === 'object' ? value : { layer: 0, depth: 'medium', multiple_layers: false, monetization_clarity: 'partial' };
+        return `
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label class="form-label ${field.required ? 'required' : ''}">${field.label}</label>
+                ${description}
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding-top: 8px;">
+                    <div>
+                        <label style="font-size: 12px; color: var(--neutral-600); display: block; margin-bottom: 4px;">MiRA Layer</label>
+                        <select class="form-control" onchange="updateMiraValue('${field.key}', 'layer', parseInt(this.value))">
+                            <option value="0" ${miraValue.layer === 0 ? 'selected' : ''}>0 - No Integration</option>
+                            <option value="1" ${miraValue.layer === 1 ? 'selected' : ''}>1 - Data Input</option>
+                            <option value="2" ${miraValue.layer === 2 ? 'selected' : ''}>2 - AI Enhancement</option>
+                            <option value="3" ${miraValue.layer === 3 ? 'selected' : ''}>3 - Predictive/Generative</option>
+                            <option value="4" ${miraValue.layer === 4 ? 'selected' : ''}>4 - Direct Monetization</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; color: var(--neutral-600); display: block; margin-bottom: 4px;">Integration Depth</label>
+                        <select class="form-control" onchange="updateMiraValue('${field.key}', 'depth', this.value)">
+                            <option value="low" ${miraValue.depth === 'low' ? 'selected' : ''}>Low</option>
+                            <option value="medium" ${miraValue.depth === 'medium' ? 'selected' : ''}>Medium</option>
+                            <option value="high" ${miraValue.depth === 'high' ? 'selected' : ''}>High</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; color: var(--neutral-600); display: block; margin-bottom: 4px;">Options</label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 4px;">
+                            <input type="checkbox" ${miraValue.multiple_layers ? 'checked' : ''}
+                                   onchange="updateMiraValue('${field.key}', 'multiple_layers', this.checked)">
+                            <span style="font-size: 12px;">Multiple Layers</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (field.type === 'financial_table' || field.type === 'benefit_table') {
+        const tableValue = typeof value === 'object' ? value : { wacc: 0.12, years: {} };
+        return `
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label class="form-label ${field.required ? 'required' : ''}">${field.label}</label>
+                ${description}
+                <div style="background: var(--neutral-50); border: 1px solid var(--neutral-200); border-radius: 8px; padding: 16px; margin-top: 8px;">
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-size: 12px; color: var(--neutral-600); display: block; margin-bottom: 4px;">WACC (%)</label>
+                        <input type="number" class="form-control" value="${tableValue.wacc * 100}" min="0" max="100" step="0.1"
+                               style="width: 120px;"
+                               onchange="updateFinancialTableValue('${field.key}', 'wacc', parseFloat(this.value) / 100)">
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;">
+                        ${[1, 2, 3, 4, 5].map(year => `
+                            <div>
+                                <label style="font-size: 11px; color: var(--neutral-600); display: block; margin-bottom: 4px;">Year ${year}</label>
+                                <input type="number" class="form-control" placeholder="0" value="${tableValue.years?.[year] || ''}"
+                                       style="font-size: 12px;"
+                                       onchange="updateFinancialTableYear('${field.key}', ${year}, parseFloat(this.value) || 0)">
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (field.type === 'dependency_list' || field.type === 'enabler_list' || field.type === 'integration_list' ||
+               field.type === 'risk_matrix' || field.type === 'assumption_list' || field.type === 'issue_list' ||
+               field.type === 'criteria_list' || field.type === 'kpi_list') {
+        const listValue = Array.isArray(value) ? value : [];
+        const itemType = field.type.replace('_list', '').replace('_matrix', '');
+        return `
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label class="form-label ${field.required ? 'required' : ''}">${field.label}</label>
+                ${description}
+                <div style="background: var(--neutral-50); border: 1px solid var(--neutral-200); border-radius: 8px; padding: 12px; margin-top: 8px;">
+                    <div id="list-${field.key}" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px;">
+                        ${listValue.length === 0 ? `<div style="color: var(--neutral-500); font-size: 12px; padding: 8px;">No items added yet</div>` :
+                          listValue.map((item, idx) => `
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="text" class="form-control" value="${typeof item === 'string' ? item : item.name || item.description || ''}"
+                                       style="flex: 1; font-size: 12px;"
+                                       onchange="updateListItemValue('${field.key}', ${idx}, this.value)" readonly>
+                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;"
+                                        onclick="removeListItem('${field.key}', ${idx})">Remove</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;"
+                            onclick="addListItem('${field.key}', '${itemType}')">+ Add ${itemType.charAt(0).toUpperCase() + itemType.slice(1)}</button>
+                </div>
+            </div>
+        `;
+    } else if (field.type === 'governance_config') {
+        const govValue = typeof value === 'object' ? value : { review_frequency: 'monthly', owner_role: '', escalation_path: '' };
+        return `
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label class="form-label ${field.required ? 'required' : ''}">${field.label}</label>
+                ${description}
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding-top: 8px;">
+                    <div>
+                        <label style="font-size: 12px; color: var(--neutral-600); display: block; margin-bottom: 4px;">Review Frequency</label>
+                        <select class="form-control" onchange="updateGovernanceValue('${field.key}', 'review_frequency', this.value)">
+                            <option value="weekly" ${govValue.review_frequency === 'weekly' ? 'selected' : ''}>Weekly</option>
+                            <option value="monthly" ${govValue.review_frequency === 'monthly' ? 'selected' : ''}>Monthly</option>
+                            <option value="quarterly" ${govValue.review_frequency === 'quarterly' ? 'selected' : ''}>Quarterly</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; color: var(--neutral-600); display: block; margin-bottom: 4px;">Owner Role</label>
+                        <input type="text" class="form-control" value="${govValue.owner_role || ''}" placeholder="e.g., Program Manager"
+                               onchange="updateGovernanceValue('${field.key}', 'owner_role', this.value)">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; color: var(--neutral-600); display: block; margin-bottom: 4px;">Escalation Path</label>
+                        <input type="text" class="form-control" value="${govValue.escalation_path || ''}" placeholder="e.g., VP → CEO"
+                               onchange="updateGovernanceValue('${field.key}', 'escalation_path', this.value)">
+                    </div>
+                </div>
+            </div>
+        `;
     }
     return '';
 }
@@ -5039,6 +5859,120 @@ function resetAIAutoFill() {
 function updateFieldValue(key, value) {
     if (!state.wizardData.criteriaValues) state.wizardData.criteriaValues = {};
     state.wizardData.criteriaValues[key] = value;
+}
+
+function updateMultiselectValue(key, optionValue, isChecked) {
+    if (!state.wizardData.criteriaValues) state.wizardData.criteriaValues = {};
+    let currentValue = state.wizardData.criteriaValues[key] || [];
+
+    if (isChecked) {
+        currentValue.push({ dimension: optionValue, gain: 3 });
+    } else {
+        currentValue = currentValue.filter(v => v.dimension !== optionValue);
+    }
+
+    state.wizardData.criteriaValues[key] = currentValue;
+    renderWizard(); // Re-render to show/hide gain selector
+}
+
+function updateMultiselectGain(key, optionValue, gain) {
+    if (!state.wizardData.criteriaValues) state.wizardData.criteriaValues = {};
+    let currentValue = state.wizardData.criteriaValues[key] || [];
+
+    const item = currentValue.find(v => v.dimension === optionValue);
+    if (item) {
+        item.gain = gain;
+    }
+
+    state.wizardData.criteriaValues[key] = currentValue;
+}
+
+function updateChecklistValue(key, optionValue, isChecked) {
+    if (!state.wizardData.criteriaValues) state.wizardData.criteriaValues = {};
+    let currentValue = state.wizardData.criteriaValues[key] || [];
+
+    if (isChecked) {
+        currentValue.push(optionValue);
+    } else {
+        currentValue = currentValue.filter(v => v !== optionValue);
+    }
+
+    state.wizardData.criteriaValues[key] = currentValue;
+}
+
+function updateTimelineValue(key, field, value) {
+    if (!state.wizardData.criteriaValues) state.wizardData.criteriaValues = {};
+    let currentValue = state.wizardData.criteriaValues[key] || { start_date: '', end_date: '', confidence: 'medium' };
+    currentValue[field] = value;
+    state.wizardData.criteriaValues[key] = currentValue;
+}
+
+function updateMiraValue(key, field, value) {
+    if (!state.wizardData.criteriaValues) state.wizardData.criteriaValues = {};
+    let currentValue = state.wizardData.criteriaValues[key] || { layer: 0, depth: 'medium', multiple_layers: false, monetization_clarity: 'partial' };
+    currentValue[field] = value;
+    state.wizardData.criteriaValues[key] = currentValue;
+}
+
+function updateFinancialTableValue(key, field, value) {
+    if (!state.wizardData.criteriaValues) state.wizardData.criteriaValues = {};
+    let currentValue = state.wizardData.criteriaValues[key] || { wacc: 0.12, years: {} };
+    currentValue[field] = value;
+    state.wizardData.criteriaValues[key] = currentValue;
+}
+
+function updateFinancialTableYear(key, year, value) {
+    if (!state.wizardData.criteriaValues) state.wizardData.criteriaValues = {};
+    let currentValue = state.wizardData.criteriaValues[key] || { wacc: 0.12, years: {} };
+    if (!currentValue.years) currentValue.years = {};
+    currentValue.years[year] = value;
+    state.wizardData.criteriaValues[key] = currentValue;
+}
+
+function updateGovernanceValue(key, field, value) {
+    if (!state.wizardData.criteriaValues) state.wizardData.criteriaValues = {};
+    let currentValue = state.wizardData.criteriaValues[key] || { review_frequency: 'monthly', owner_role: '', escalation_path: '' };
+    currentValue[field] = value;
+    state.wizardData.criteriaValues[key] = currentValue;
+}
+
+function updateListItemValue(key, index, value) {
+    if (!state.wizardData.criteriaValues) state.wizardData.criteriaValues = {};
+    let currentValue = state.wizardData.criteriaValues[key] || [];
+    if (currentValue[index]) {
+        if (typeof currentValue[index] === 'string') {
+            currentValue[index] = value;
+        } else {
+            currentValue[index].name = value;
+        }
+    }
+    state.wizardData.criteriaValues[key] = currentValue;
+}
+
+function addListItem(key, itemType) {
+    if (!state.wizardData.criteriaValues) state.wizardData.criteriaValues = {};
+    let currentValue = state.wizardData.criteriaValues[key] || [];
+
+    const itemName = prompt(`Enter ${itemType} name or description:`);
+    if (itemName) {
+        if (itemType === 'risk') {
+            currentValue.push({ name: itemName, impact: 'medium', probability: 'medium', mitigation: '' });
+        } else if (itemType === 'dependency' || itemType === 'enabler') {
+            currentValue.push({ name: itemName, criticality: 'Medium', status: 'Pending' });
+        } else {
+            currentValue.push(itemName);
+        }
+        state.wizardData.criteriaValues[key] = currentValue;
+        renderWizard();
+    }
+}
+
+function removeListItem(key, index) {
+    if (!state.wizardData.criteriaValues) state.wizardData.criteriaValues = {};
+    let currentValue = state.wizardData.criteriaValues[key] || [];
+    currentValue.splice(index, 1);
+    state.wizardData.criteriaValues[key] = currentValue;
+    renderWizard();
 }
 
 function wizardNext(currentStep) {
@@ -6349,6 +7283,17 @@ window.closeProjectWizard = closeProjectWizard;
 window.runAIAutoFill = runAIAutoFill;
 window.resetAIAutoFill = resetAIAutoFill;
 window.updateFieldValue = updateFieldValue;
+window.updateMultiselectValue = updateMultiselectValue;
+window.updateMultiselectGain = updateMultiselectGain;
+window.updateChecklistValue = updateChecklistValue;
+window.updateTimelineValue = updateTimelineValue;
+window.updateMiraValue = updateMiraValue;
+window.updateFinancialTableValue = updateFinancialTableValue;
+window.updateFinancialTableYear = updateFinancialTableYear;
+window.updateGovernanceValue = updateGovernanceValue;
+window.updateListItemValue = updateListItemValue;
+window.addListItem = addListItem;
+window.removeListItem = removeListItem;
 window.wizardNext = wizardNext;
 window.wizardPrev = wizardPrev;
 window.submitWizard = submitWizard;
